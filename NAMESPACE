@@ -1,0 +1,2 @@
+useDynLib(bcv)
+export(cv.svd)

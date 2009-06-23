@@ -1,0 +1,11 @@
+Package: bcv
+Type: Package
+Title: Bi-Cross-Validation for the SVD
+Version: 1.0
+Date: 2008-09-18
+Author: Patrick O. Perry
+Maintainer: Patrick O. Perry <patperry@stanford.edu>
+Description: This package implements Bi-Cross-Validation for the SVD,
+    as described in Owen & Perry "Bi Cross Validation for the SVD and NMF".
+    It is a method for choosing how many terms of an SVD to keep.
+License: BSD3
