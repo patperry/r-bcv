@@ -113,9 +113,10 @@ perm_select (perm_t *perm, int k, int l)
 SEXP 
 driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 {
-    double *x;
-    int M, N, K, L, k, i, j, kmax;
+    double *x_data;
+    bcv_index_t M, N, K, L, k, i, j, kmax;
     bcv_svd_t *bcv;
+    bcv_holdin_t holdin;
     SEXP rss_R, dim;
     double *rss;
     perm_t perm;
@@ -123,18 +124,21 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     if (!isMatrix (xx) || !isNumeric (xx))
         error ("x should be a matrix");
 
-    x    = NUMERIC_POINTER (xx);
-    M    = INTEGER (getAttrib (xx, R_DimSymbol))[0];
-    N    = INTEGER (getAttrib (xx, R_DimSymbol))[1];
-    K    = asInteger (KK);
-    L    = asInteger (LL);
-    kmax = asInteger (max_rank);
 
+    x_data = NUMERIC_POINTER (xx);
+    M      = INTEGER (getAttrib (xx, R_DimSymbol))[0];
+    N      = INTEGER (getAttrib (xx, R_DimSymbol))[1];
+    K      = asInteger (KK);
+    L      = asInteger (LL);
+    kmax   = asInteger (max_rank);
+
+    bcv_matrix_t x = { M, N, x_data, MAX (M,1) };
     perm_init (&perm, M, N, K, L, INTEGER_POINTER (s_r), INTEGER_POINTER (s_c));
     
     PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
     rss = NUMERIC_POINTER (rss_R);
     bcv = bcv_svd_alloc (M, N);
+
 
     for (j = 1; j <= L; j++)
     {
@@ -147,7 +151,9 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             {
                 REprintf ("L: %d  N: %d  n: %d\n", L, N, perm.n);
             }
-            bcv_svd_initp (bcv, M, N, perm.m, perm.n, x, M, perm.ir, perm.jc);
+            holdin.m = perm.m;
+            holdin.n = perm.n;
+            bcv_svd_initp (bcv, holdin, &x, perm.ir, perm.jc);
             /* TODO: check for error return */
 
             *rss++ = bcv_svd_get_resid_rss (bcv);

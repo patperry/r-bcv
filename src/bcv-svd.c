@@ -13,7 +13,7 @@
 
 struct _bcv_svd
 {
-    int M_max, N_max;
+    bcv_index_t M_max, N_max;
     bcv_matrix_t *x11; bcv_matrix_t *x12;
     bcv_matrix_t *x21; bcv_matrix_t *x22;
     double *d;
@@ -25,12 +25,12 @@ bcv_svd_decompose (bcv_svd_t *bcv);
 
 
 bcv_svd_t *
-bcv_svd_alloc (int M_max, int N_max)
+bcv_svd_alloc (bcv_index_t M_max, bcv_index_t N_max)
 {
     bcv_svd_t *bcv;
     
-    assert( M_max >= 1 );
-    assert( N_max >= 1 );
+    assert (M_max >= 1);
+    assert (N_max >= 1);
     
     if (   (bcv            = malloc (sizeof (bcv_svd_t)))
         && (bcv->x11       = malloc (sizeof (bcv_matrix_t)))
@@ -53,33 +53,39 @@ bcv_svd_alloc (int M_max, int N_max)
 
 
 bcv_error_t
-bcv_svd_init (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx)
+bcv_svd_init (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x)
 {
-    return bcv_svd_initp (bcv, M, N, m, n, x, ldx, NULL, NULL);
+    return bcv_svd_initp (bcv, holdin, x, NULL, NULL);
 }
 
 bcv_error_t
-bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx, 
-               int *p, int *q)
+bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
+               bcv_index_t *p, bcv_index_t *q)
 {
     bcv_error_t result = 0;
+    bcv_index_t M, N, m, n;
     
     assert (bcv);
-    assert (x);
-    assert (0 < M && M <= bcv->M_max);
-    assert (0 < N && N <= bcv->N_max);
-    assert (0 < m && m < M);
-    assert (0 < n && n < N);
-    assert (ldx >= M);
+    _bcv_assert_valid_matrix (x);
+    
+    M = x->m;
+    N = x->n;
+    m = holdin.m;
+    n = holdin.n;
+
+    assert (0 <= M && M <= bcv->M_max);
+    assert (0 <= N && N <= bcv->N_max);
+    assert (0 <= m && m <= M);
+    assert (0 <= n && n <= N);
     
     bcv->x11->m   = m;
     bcv->x11->n   = n;
     bcv->x11->lda = M;
 
-    bcv->x21->m   = M - m;
-    bcv->x21->n   = n;
+    bcv->x21->m    = M - m;
+    bcv->x21->n    = n;
     bcv->x21->data = bcv->x11->data + m;
-    bcv->x21->lda = M;
+    bcv->x21->lda  = M;
     
     bcv->x12->m    = m;
     bcv->x12->n    = N - n;
@@ -91,9 +97,8 @@ bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx,
     bcv->x22->data = bcv->x11->data + m + n * M;
     bcv->x22->lda  = M;
 
-    bcv_matrix_t dst = { M, N, bcv->x11->data, M   };
-    bcv_matrix_t src = { M, N, x,              ldx };
-    _bcv_matrix_permute_copy (&dst, &src, p, q);
+    bcv_matrix_t dst = { M, N, bcv->x11->data, M };
+    _bcv_matrix_permute_copy (&dst, x, p, q);
     
     result = bcv_svd_decompose (bcv);
     
@@ -117,23 +122,19 @@ bcv_svd_free (bcv_svd_t *bcv)
 
 
 void 
-bcv_svd_get_resid (const bcv_svd_t *bcv, int *m2, int *n2, double **resid, 
-                   int *ldr)
+bcv_svd_get_resid (const bcv_svd_t *bcv, bcv_matrix_t *resid)
 {
     assert (bcv);
-    assert (m2);
-    assert (n2);
     assert (resid);
-    assert (ldr);
     
-    *m2    = bcv->x22->m;
-    *n2    = bcv->x22->n;
-    *resid = bcv->x22->data;
-    *ldr   = bcv->x22->lda;
+    resid->m    = bcv->x22->m;
+    resid->n    = bcv->x22->n;
+    resid->data = bcv->x22->data;
+    resid->lda  = bcv->x22->lda;
 }
 
 
-int 
+bcv_index_t 
 bcv_svd_get_max_rank (bcv_svd_t *bcv)
 {
     assert (bcv);
@@ -224,7 +225,7 @@ bcv_svd_decompose (bcv_svd_t *bcv)
  *         x22 := x22 + (scale/d[i]) * u[i] * v[i]^T
  */
 void
-bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int i)
+bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
 {
     assert (bcv);
     assert (0 <= i && i < bcv_svd_get_max_rank (bcv));
