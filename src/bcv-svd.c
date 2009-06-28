@@ -100,38 +100,9 @@ bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx,
     bcv->x22->data = bcv->x11->data + m + n * M;
     bcv->x22->lda  = M;
 
-    if (p == NULL && q == NULL)
-    {
-        F77_CALL (dlacpy) ("R", &M, &N, x, &ldx, bcv->x11->data, &(bcv->x11->lda));
-    }
-    else if (p == NULL) /* permute the columns only */
-    {
-        for (j = 0; j < N; j++)
-        {
-            F77_CALL (dcopy) (&M, x + j * ldx, &one, 
-                              bcv->x11->data + q[j] * (bcv->x11->lda), &one);
-        }
-    }
-    else if (q == NULL) /* permute the rows only */
-    {
-        for (i = 0; i < M; i++)
-        {
-            F77_CALL (dcopy) (&N, x + i, &ldx, bcv->x11->data + p[i], &(bcv->x11->lda));
-        }
-    }
-    else /* permute both rows and columns */
-    {
-        double *src, *dst;
-
-        for (j = 0; j < N; j++)
-        {
-            src = x + j * ldx;
-            dst = bcv->x11->data + q[j] * (bcv->x11->lda);
-            
-            for (i = 0; i < M; i++)
-                dst[p[i]] = src[i];
-        }
-    }
+    bcv_matrix_t dst = { M, N, bcv->x11->data, M   };
+    bcv_matrix_t src = { M, N, x,              ldx };
+    _bcv_matrix_permute_copy (&dst, &src, p, q);
 }
 
 void 
