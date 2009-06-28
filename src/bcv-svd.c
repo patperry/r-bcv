@@ -194,8 +194,7 @@ bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
     double frob;
     double mse;
     
-    frob = F77_CALL (dlange) ("F", &m2, &n2, 
-                              bcv->x22->data, &(bcv->x22->lda), NULL);
+    frob = _bcv_matrix_norm_frob (bcv->x22);
     mse  = (frob * frob) / (m2 * n2);
     
     return mse;
