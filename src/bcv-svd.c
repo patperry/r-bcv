@@ -23,9 +23,10 @@ static int
 decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
            double *d);
 
-static void update (int M, int N, int m, int n, int k, double alpha,
-                    const double *x21, int ld21, const double *vt, int ldvt,
-                    const double *x12, int ld12, double *x22, int ld22);
+static void
+update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt, 
+        bcv_matrix_t *x12, bcv_matrix_t *x22);
+
                     
 static void set_identity (int m, int n, double *a, int lda);
 
@@ -208,11 +209,7 @@ bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int k)
     assert (k < mn);
 
     alpha = scale / bcv->d[k];
-    update (M, N, m, n, k, alpha, 
-            bcv->x21->data, bcv->x21->lda,
-            bcv->x11->data, bcv->x11->lda, 
-            bcv->x12->data, bcv->x12->lda, 
-            bcv->x22->data, bcv->x22->lda);
+    update (k, alpha, bcv->x21, bcv->x11, bcv->x12, bcv->x22);
 }
 
 
@@ -361,13 +358,17 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
  *         x22 := x22 + alpha * (x21 v(:,k)) (x12(k,:))^T
  */
 static void
-update (int M, int N, int m, int n, int k, double alpha,
-        const double *x21, int ld21, const double *vt, int ldvt,
-        const double *x12, int ld12, double *x22, int ld22)
+update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt, 
+        bcv_matrix_t *x12, bcv_matrix_t *x22)
 {
-    int m2 = M - m;
-    int n2 = N - n;
-    int mn = MIN (m, n);
+    bcv_index_t m, n, m2, n2, mn;
+
+    m  = x12->m;
+    n  = x21->n;
+    mn = MIN (m, n);
+    m2 = x22->m;
+    n2 = x22->n;
+    
     double u[m2];
     double done = 1.0;
     double dzero = 0.0;
@@ -376,12 +377,12 @@ update (int M, int N, int m, int n, int k, double alpha,
     assert (k < mn);
 
     /* u := x21 * v(:,k)  ( = x21 : vt(k,:) ) */
-    F77_CALL (dgemv) ("N", &m2, &n, &done, x21, &ld21, vt + k, &ldvt,
-                      &dzero, u, &one);
+    F77_CALL (dgemv) ("N", &m2, &n, &done, x21->data, &(x21->lda), 
+                      vt->data + k, &(vt->lda), &dzero, u, &one);
 
     /* x22 := x22 + alpha * u x12(k,:)^T */
-    F77_CALL (dger) (&m2, &n2, &alpha, u, &one, (double *) (x12 + k), &ld12, 
-                     x22, &ld22);
+    F77_CALL (dger) (&m2, &n2, &alpha, u, &one, (x12->data + k), &(x12->lda), 
+                     x22->data, &(x22->lda));
 }
 
 
