@@ -5,6 +5,16 @@
 #include <limits.h>
 
 /**
+ * bcv_bool_t:
+ *
+ * A boolean value.
+ */
+typedef enum _bcv_bool { 
+    BCV_FALSE = 0, 
+    BCV_TRUE 
+} bcv_bool_t;
+
+/**
  * bcv_index_t:
  *
  * A #bcv_index_t is the type of a matrix of vector index.  This type

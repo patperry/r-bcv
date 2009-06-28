@@ -119,9 +119,16 @@ double
 _bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a, 
                     double *work);
 
+bcv_index_t
+_bcv_lapack_dlange_work_len (bcv_matrix_norm_t norm, 
+                             bcv_index_t m, bcv_index_t n);
+
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
                     double *taup, double *work, bcv_index_t lwork);
+
+bcv_index_t
+_bcv_lapack_dgebrd_work_len (bcv_index_t m, bcv_index_t n);
 
 void
 _bcv_lapack_dormbr (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
@@ -129,9 +136,17 @@ _bcv_lapack_dormbr (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
                     const bcv_matrix_t *a, double *tau,
                     bcv_matrix_t *c, double *work, bcv_index_t lwork);
 
+bcv_index_t
+_bcv_lapack_dormbr_work_len (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
+                             bcv_index_t ma, bcv_index_t na,
+                             bcv_index_t mc, bcv_index_t nc);
+
 bcv_error_t
 _bcv_lapack_dbdsqr (bcv_matrix_uplo_t uplo, bcv_index_t n,
                     double *d, double *e, bcv_matrix_t *vt, bcv_matrix_t *u,
                     bcv_matrix_t *c, double *work);
+
+bcv_index_t
+_bcv_lapack_dbdsqr_work_len (bcv_index_t n, bcv_bool_t only_values);
 
 #endif /* _BCV_MATRIX_PRIVATE_H */

@@ -267,7 +267,22 @@ _bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a,
     
     return result;
 }
+
+
+bcv_index_t
+_bcv_lapack_dlange_work_len (bcv_matrix_norm_t norm, 
+                             bcv_index_t m, bcv_index_t n)
+{
+    bcv_index_t result = 0;
     
+    if (norm == BCV_MATRIX_NORM_INF)
+    {
+        result = MAX (1, m);
+    }
+    
+    return result;
+}
+
 
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
@@ -289,6 +304,30 @@ _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
                          d, e, tauq, taup, work, &lwork, &info);
         assert (info == 0);
     }
+}
+
+
+bcv_index_t
+_bcv_lapack_dgebrd_work_len (bcv_index_t m, bcv_index_t n)
+{
+    bcv_error_t info  = 0;
+    bcv_index_t lwork = -1;
+    double size;
+    bcv_index_t result = 0;
+    
+    if (m > 0 && n > 0)
+    {
+        _bcv_dgebrd_f77 (&m, &n, NULL, &m,
+                         NULL, NULL, NULL, NULL, &size, &lwork, &info);
+        assert (info == 0);
+        
+        if (size <= (double) BCV_MAX_INDEX)
+        {
+            result = (bcv_index_t) size;
+        }
+    }
+
+    return result;
 }
 
 
@@ -317,6 +356,40 @@ _bcv_lapack_dormbr (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
                          work, &lwork, &info);
         assert (info == 0);
     }
+}
+
+
+bcv_index_t
+_bcv_lapack_dormbr_work_len (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
+                             bcv_index_t ma, bcv_index_t na,
+                             bcv_index_t mc, bcv_index_t nc)
+{
+    bcv_index_t result = 0;
+    bcv_matrix_transpose_t trans = BCV_MATRIX_NOTRANS;
+    bcv_index_t r   = (side == BCV_MATRIX_LEFT) ? mc : nc;
+    bcv_index_t k   = (vect == BCV_MATRIX_VECT_Q) ? na : ma;
+    bcv_index_t lda = (vect == BCV_MATRIX_VECT_Q) ? MAX (1,r) 
+                                                  : MAX (1, MIN (r,k));
+    bcv_index_t ldc = MAX (1,mc);
+    double work;
+    bcv_index_t lwork = -1;
+    bcv_error_t info;
+    
+    if (mc > 0 && nc > 0 && k > 0 && r > 0)
+    {
+        _bcv_dormbr_f77 (_BCV_F77_VECT (vect), _BCV_F77_SIDE (side),
+                         _BCV_F77_TRANS (trans), &mc, &nc, &k,
+                         NULL, &lda, NULL, NULL, &ldc,
+                         &work, &lwork, &info);
+        assert (info == 0);
+    
+        if (work <= (double) BCV_MAX_INDEX)
+        {
+            result = (bcv_index_t) work;
+        }
+    }
+    
+    return result;
 }
 
 
@@ -370,4 +443,27 @@ _bcv_lapack_dbdsqr (bcv_matrix_uplo_t uplo, bcv_index_t n,
     }
     
     return info;
+}
+
+bcv_index_t
+_bcv_lapack_dbdsqr_work_len (bcv_index_t n, bcv_bool_t only_values)
+{
+    bcv_index_t result = 0;
+    
+    if (only_values) 
+    {
+        if (n <= BCV_MAX_INDEX / 2)
+        {
+            result = 2 * n;
+        }
+    }
+    else
+    {
+        if (n <= BCV_MAX_INDEX / 4) 
+        {
+            result = 4 * n;
+        }
+    }
+    
+    return result;
 }
