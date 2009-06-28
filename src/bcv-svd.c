@@ -24,10 +24,6 @@ static bcv_error_t
 decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
            double *d);
 
-static void print_matrix (const char *name, int m, int n, const double *x, 
-                          int ldx);
-
-
 
 bcv_svd_t *
 bcv_svd_alloc (int M_max, int N_max)
@@ -174,40 +170,6 @@ bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
 }
 
 
-void
-bcv_svd_debug (const bcv_svd_t *bcv)
-{
-    bcv_index_t M, N, m, n, mn;
-    
-    assert (bcv);
-    
-    m = bcv->x11->m;
-    n = bcv->x11->n;
-    M = m + bcv->x22->m;
-    N = n + bcv->x22->n;
-    mn = MIN (m,n);
-
-    
-    REprintf ("bcv_svd_t {\n"
-              "    M_max : %d\n"
-              "    N_max : %d\n"
-              "    M     : %d\n"
-              "    N     : %d\n"
-              "    m     : %d\n"
-              "    n     : %d\n"
-              "    mn    : %d\n",
-              bcv->M_max, bcv->N_max, M, N, m, n, mn);
-    
-    print_matrix ("x11", bcv->x11->m, bcv->x11->n, bcv->x11->data, bcv->x11->lda);
-    print_matrix ("x12", bcv->x12->m, bcv->x12->n, bcv->x12->data, bcv->x12->lda);
-    print_matrix ("x21", bcv->x21->m, bcv->x21->n, bcv->x21->data, bcv->x21->lda);
-    print_matrix ("x22", bcv->x22->m, bcv->x22->n, bcv->x22->data, bcv->x22->lda);
-    print_matrix ("  d", 1, mn, bcv->d, 1);
-
-    REprintf ("}\n");
-}
-
-
 /*
  * Decompose x11 = Q U D V^T P^T
  * Set       x11 := V^T
@@ -297,24 +259,4 @@ bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int i)
     
     /* Update x22 := x22 + alpha * u v^T */
     _bcv_blas_dger (alpha, &u, &v, bcv->x22);
-}
-
-
-static void
-print_matrix (const char *name, int m, int n, const double *x, int ldx)
-{
-    int i,j;
- 
-    REprintf ("    %s (0x%x) :\n", name, x );
-    
-    for (i = 0; i < m; i++)
-    {
-        for (j = 0; j < n; j++)
-        {
-            if (x[i + j*ldx] >= 0) REprintf (" ");
-            REprintf ("%4g    ", x[i + j*ldx]);
-        }
-        REprintf("\n          ");
-    }
-    REprintf("\n");
 }
