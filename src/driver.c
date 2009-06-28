@@ -159,7 +159,7 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             *rss++ = bcv_svd_get_resid_rss (bcv);
             for (k = 0; k < kmax; k++)
             {
-                bcv_svd_update_resid (bcv, -1.0, k);
+                bcv_svd_update_resid (bcv, 1.0, k);
                 *rss++ = bcv_svd_get_resid_rss (bcv);            
             }
         }

@@ -123,12 +123,12 @@ bcv_svd_get_max_rank (bcv_svd_t *bcv);
 /**
  * bcv_svd_update_resid
  * @bcv: the BCV workspace
- * @scale: a scalar to multiply the factor by before adding it
- *   to the residual matrix
+ * @scale: a scalar to multiply the factor by before subtracting it
+ *   from the residual matrix
  * @i: the factor index
  *
- * Replace the residual estimate x22 by x22 + scale d2[i] u2[i] v2[i]^T.
- * Normally, @scale will be -1.0.
+ * Replace the residual estimate x22 by x22 - scale d2[i] u2[i] v2[i]^T.
+ * Normally, @scale will be 1.0.
  */
 void 
 bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t k);

@@ -222,7 +222,7 @@ bcv_svd_decompose (bcv_svd_t *bcv)
 
 /*
  * This function updates x22 as:
- *         x22 := x22 + (scale/d[i]) * u[i] * v[i]^T
+ *         x22 := x22 - (scale/d[i]) * u[i] * v[i]^T
  */
 void
 bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
@@ -230,7 +230,7 @@ bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
     assert (bcv);
     assert (0 <= i && i < bcv_svd_get_max_rank (bcv));
 
-    double alpha = scale / bcv->d[i];
+    double alpha = -scale / bcv->d[i];
     
     /* x11 stores P1^T
      * Set p1 := ei^T P1^T = P1 ei 
