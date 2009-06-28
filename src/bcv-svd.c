@@ -19,6 +19,9 @@ struct _bcv_svd
     double *d;
 };
 
+static void
+bcv_init_storage (bcv_svd_t *bcv, bcv_holdin_t holdin,
+                  bcv_index_t M, bcv_index_t N);
 
 static bcv_error_t
 bcv_svd_decompose (bcv_svd_t *bcv);
@@ -51,6 +54,20 @@ bcv_svd_alloc (bcv_index_t M_max, bcv_index_t N_max)
     return NULL;
 }
 
+void 
+bcv_svd_free (bcv_svd_t *bcv)
+{
+    if (bcv)
+    {
+        free (bcv->d);
+        free (bcv->x11->data);
+        free (bcv->x11);
+        free (bcv->x12);
+        free (bcv->x21);
+        free (bcv->x22);
+        free (bcv);
+    }
+}
 
 bcv_error_t
 bcv_svd_init (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x)
@@ -63,20 +80,35 @@ bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
                bcv_index_t *p, bcv_index_t *q)
 {
     bcv_error_t result = 0;
-    bcv_index_t M, N, m, n;
+    bcv_index_t M, N;
     
     assert (bcv);
     _bcv_assert_valid_matrix (x);
     
     M = x->m;
     N = x->n;
+    _bcv_assert_valid_holdin (&holdin, M, N);
+
+    assert (M <= bcv->M_max);
+    assert (N <= bcv->N_max);
+    
+    bcv_init_storage (bcv, holdin, M, N);
+    bcv_matrix_t dst = { M, N, bcv->x11->data, M };
+    _bcv_matrix_permute_copy (&dst, x, p, q);
+    
+    result = bcv_svd_decompose (bcv);
+    
+    return result;
+}
+
+static void
+bcv_init_storage (bcv_svd_t *bcv, bcv_holdin_t holdin,
+                  bcv_index_t M, bcv_index_t N)
+{
+    bcv_index_t m, n;
+    
     m = holdin.m;
     n = holdin.n;
-
-    assert (0 <= M && M <= bcv->M_max);
-    assert (0 <= N && N <= bcv->N_max);
-    assert (0 <= m && m <= M);
-    assert (0 <= n && n <= N);
     
     bcv->x11->m   = m;
     bcv->x11->n   = n;
@@ -96,28 +128,6 @@ bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
     bcv->x22->n    = N - n;
     bcv->x22->data = bcv->x11->data + m + n * M;
     bcv->x22->lda  = M;
-
-    bcv_matrix_t dst = { M, N, bcv->x11->data, M };
-    _bcv_matrix_permute_copy (&dst, x, p, q);
-    
-    result = bcv_svd_decompose (bcv);
-    
-    return result;
-}
-
-void 
-bcv_svd_free (bcv_svd_t *bcv)
-{
-    if (bcv)
-    {
-        free (bcv->d);
-        free (bcv->x11->data);
-        free (bcv->x11);
-        free (bcv->x12);
-        free (bcv->x21);
-        free (bcv->x22);
-        free (bcv);
-    }
 }
 
 
