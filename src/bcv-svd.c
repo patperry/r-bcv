@@ -243,7 +243,7 @@ bcv_svd_debug (const bcv_svd_t *bcv)
  *           d   := D
  */
 static int
-decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, 
+decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
            bcv_matrix_t *x21, double *d)
 {
     bcv_index_t m, n, mn, m2, n2;
@@ -263,7 +263,7 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
     int one = 1;
     double dzero = 0.0;
     int i;
-    char *uplo;
+    bcv_matrix_uplo_t uplo;
 
     assert (m > 0);
     assert (n > 0);
@@ -291,36 +291,32 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
 
         x11->data[0] = 1.0;
     }
-    else 
+    else
     {
-        /* decompose x11 := Q B P^T */ 
-        F77_CALL (dgebrd) (&m, &n, x11->data, &(x11->lda), d, e, tauq, taup, 
-                           work, &lwork, &info);
+        /* decompose x11 := Q B P^T */
+        _bcv_lapack_dgebrd (x11, d, e, tauq, taup, work, lwork);
     
-        if (info == 0)
-        {
-            /* set x21 := x21 P */
-            F77_CALL (dormbr) ("P", "R", "N", &m2, &n, &m, 
-                               x11->data, &(x11->lda), taup, 
-                               x21->data, &(x21->lda), work, &lwork, &info);
-            assert (info == 0);
-        
-            /* set x12 := Q^T x12 */
-            F77_CALL (dormbr) ("Q", "L", "T", &m, &n2, &n, 
-                               x11->data, &(x11->lda), tauq, 
-                               x12->data, &(x12->lda), work, &lwork, &info);
-            assert (info == 0);
+        /* set x21 := x21 P */
+        _bcv_lapack_dormbr (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
+                            BCV_MATRIX_NOTRANS, x11, taup, x21, 
+                            work, lwork);
+    
+        /* set x12 := Q^T x12 */
+        _bcv_lapack_dormbr (BCV_MATRIX_VECT_Q, BCV_MATRIX_LEFT, 
+                            BCV_MATRIX_TRANS, x11, tauq, x12, 
+                            work, lwork);
 
-            /* decompose B = U S V^T
-             *    set x11 := V^T 
-             *        x12 := U^T x12
-             */
-            uplo = (m >= n) ? "U" : "L";
-            _bcv_matrix_set_identity (x11);
-            F77_CALL (dbdsqr) (uplo, &mn, &n, &zero, &n2, d, e, 
-                               x11->data, &(x11->lda), NULL, &one, 
-                               x12->data, &(x12->lda), work, &info);
-        }
+        /* decompose B = U S V^T
+         *    set x11 := V^T 
+         *        x12 := U^T x12
+         */
+        uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
+        x11->m = mn;
+        x11->n = mn;
+        x12->m = mn;
+        x21->n = mn;
+        _bcv_matrix_set_identity (x11);
+        info = _bcv_lapack_dbdsqr (uplo, mn, d, e, x11, NULL, x12, work);
     }
     
     return info;
