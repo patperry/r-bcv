@@ -5,6 +5,7 @@
 #include <R_ext/Lapack.h>
 #include "bcv-svd.h"
 #include "bcv-types.h"
+#include "bcv-matrix-private.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define BLOCKSIZE 64
@@ -26,9 +27,6 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21,
 static void
 update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt, 
         bcv_matrix_t *x12, bcv_matrix_t *x22);
-
-                    
-static void set_identity (int m, int n, double *a, int lda);
 
 static void print_matrix (const char *name, int m, int n, const double *x, 
                           int ldx);
@@ -340,7 +338,7 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
              *        x12 := U^T x12
              */
             uplo = (m >= n) ? "U" : "L";
-            set_identity (mn, n, x11->data, x11->lda);
+            _bcv_matrix_set_identity (x11);
             F77_CALL (dbdsqr) (uplo, &mn, &n, &zero, &n2, d, e, 
                                x11->data, &(x11->lda), NULL, &one, 
                                x12->data, &(x12->lda), work, &info);
@@ -385,32 +383,6 @@ update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt,
                      x22->data, &(x22->lda));
 }
 
-
-static void
-set_identity (int m, int n, double *a, int lda)
-{
-    int j, mn;
-    
-    if (m > 0 && n > 0)
-    {
-        if (lda == m)
-        {
-            bzero (a, m * n * sizeof (double));
-
-            mn = MIN (m, n);
-            for (j = 0; j < mn; j++, a += lda + 1)
-                *a = 1.0;
-        }
-        else
-        {
-            for (j = 0; j < n; j++, a += lda)
-            {
-                bzero (a, m * sizeof (double));
-                if (j < m) a[j] = 1.0;
-            }
-        }
-    }
-}
 
 static void
 print_matrix (const char *name, int m, int n, const double *x, int ldx)
