@@ -111,7 +111,11 @@ bcv_svd_free (bcv_svd_t *bcv)
     if (bcv)
     {
         free (bcv->d);
+        free (bcv->x11->data);
         free (bcv->x11);
+        free (bcv->x12);
+        free (bcv->x21);
+        free (bcv->x22);
         free (bcv);
     }
 }
