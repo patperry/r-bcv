@@ -148,13 +148,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
                 REprintf ("L: %d  N: %d  n: %d\n", L, N, perm.n);
             }
             bcv_svd_initp (bcv, M, N, perm.m, perm.n, x, M, perm.ir, perm.jc);
+            /* TODO: check for error return */
 
-            //bcv_svd_debug (bcv);
-            //perm_debug (&perm);
-
-            bcv_svd_decompose (bcv);
-            //bcv_svd_debug (bcv);
-        
             *mse++ = bcv_svd_get_resid_mse (bcv);
             for (k = 0; k < kmax; k++)
             {

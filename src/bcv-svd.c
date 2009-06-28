@@ -21,8 +21,7 @@ struct _bcv_svd
 
 
 static bcv_error_t
-decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
-           double *d);
+bcv_svd_decompose (bcv_svd_t *bcv);
 
 
 bcv_svd_t *
@@ -53,16 +52,18 @@ bcv_svd_alloc (int M_max, int N_max)
 }
 
 
-void 
+bcv_error_t
 bcv_svd_init (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx)
 {
-    bcv_svd_initp (bcv, M, N, m, n, x, ldx, NULL, NULL);
+    return bcv_svd_initp (bcv, M, N, m, n, x, ldx, NULL, NULL);
 }
 
-void 
+bcv_error_t
 bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx, 
                int *p, int *q)
 {
+    bcv_error_t result = 0;
+    
     assert (bcv);
     assert (x);
     assert (0 < M && M <= bcv->M_max);
@@ -93,6 +94,10 @@ bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx,
     bcv_matrix_t dst = { M, N, bcv->x11->data, M   };
     bcv_matrix_t src = { M, N, x,              ldx };
     _bcv_matrix_permute_copy (&dst, &src, p, q);
+    
+    result = bcv_svd_decompose (bcv);
+    
+    return result;
 }
 
 void 
@@ -108,25 +113,6 @@ bcv_svd_free (bcv_svd_t *bcv)
         free (bcv->x22);
         free (bcv);
     }
-}
-
-
-int 
-bcv_svd_decompose (bcv_svd_t *bcv)
-{
-    int info;
-    bcv_index_t M, N, m, n;
-    
-    assert (bcv);
-    
-    m = bcv->x11->m;
-    n = bcv->x11->n;
-    M = m + bcv->x22->m;
-    N = n + bcv->x22->n;
-    
-    info = decompose (bcv->x11, bcv->x12, bcv->x21, bcv->d);
-                          
-    return info;
 }
 
 
@@ -171,56 +157,65 @@ bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
 
 
 /*
- * Decompose x11 = Q U D V^T P^T
- * Set       x11 := V^T
- *           x12 := U^T Q^T x12
- *           x21 := x21 P
- *           d   := D
+ * Decompose x11 = Q Q1 D P1^T P^T
+ * Set       x11  := P1^T
+ *           x12  := Q1^T Q^T x12
+ *           x21  := x21 P
+ *           work := D
  */
 static bcv_error_t
-decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
-           bcv_matrix_t *x21, double *d)
+bcv_svd_decompose (bcv_svd_t *bcv)
 {
-    bcv_index_t m, n, mn, m2, n2;
-    
-    m  = x11->m;
-    n  = x11->n;
-    mn = MIN (m, n);
-    m2 = x21->m;
-    n2 = x12->n;
-    
-    double e[mn], tauq[mn], taup[mn];
-    int lwork = (m + n) * BLOCKSIZE;
-    double work[lwork];
-    bcv_error_t info = 0;
+    bcv_error_t result = 0;
+    bcv_index_t m, n, mn;
     bcv_matrix_uplo_t uplo;
+    
+    assert (bcv);
+    assert (bcv->d);
+    _bcv_assert_valid_matrix (bcv->x11);
+    _bcv_assert_valid_matrix (bcv->x12);
+    _bcv_assert_valid_matrix (bcv->x21);
+    
+    m  = bcv->x11->m;
+    n  = bcv->x11->n;
+    mn = MIN (m, n);
 
-    /* decompose x11 := Q B P^T */
-    _bcv_lapack_dgebrd (x11, d, e, tauq, taup, work, lwork);
+    /* decompose x11 := Q B P^T */ 
+    bcv_index_t lwork = (m + n) * BLOCKSIZE;
+    double e[mn];
+    double tauq[mn];
+    double taup[mn];
+    double work[lwork];
+    _bcv_lapack_dgebrd (bcv->x11, bcv->d, e, tauq, taup, work, lwork);
 
     /* set x21 := x21 P */
     _bcv_lapack_dormbr (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
-                        BCV_MATRIX_NOTRANS, x11, taup, x21, 
+                        BCV_MATRIX_NOTRANS, bcv->x11, taup, bcv->x21, 
                         work, lwork);
 
     /* set x12 := Q^T x12 */
     _bcv_lapack_dormbr (BCV_MATRIX_VECT_Q, BCV_MATRIX_LEFT, 
-                        BCV_MATRIX_TRANS, x11, tauq, x12, 
+                        BCV_MATRIX_TRANS, bcv->x11, tauq, bcv->x12, 
                         work, lwork);
 
-    /* decompose B = U S V^T
-     *    set x11 := V^T 
-     *        x12 := U^T x12
+    /* we can now drop the extra rows and columns; they never enter into
+     * the svd.
      */
     uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
-    x11->m = mn;
-    x11->n = mn;
-    x12->m = mn;
-    x21->n = mn;
-    _bcv_matrix_set_identity (x11);
-    info = _bcv_lapack_dbdsqr (uplo, mn, d, e, x11, NULL, x12, work);
+    bcv->x11->m = mn;
+    bcv->x11->n = mn;
+    bcv->x12->m = mn;
+    bcv->x21->n = mn;
     
-    return info;
+    /* decompose B = Q1 S P1^T
+     *    set x11 := P1^T 
+     *        x12 := Q1^T x12
+     */
+    _bcv_matrix_set_identity (bcv->x11);
+    result = _bcv_lapack_dbdsqr (uplo, mn, bcv->d, e, 
+                                 bcv->x11, NULL, bcv->x12, work);
+    
+    return result;
 }
 
 
