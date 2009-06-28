@@ -4,6 +4,7 @@
 #include <R.h>
 #include <R_ext/Lapack.h>
 #include "bcv-svd.h"
+#include "bcv-types.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define BLOCKSIZE 64
@@ -12,9 +13,9 @@
 struct _bcv_svd
 {
     int M_max, N_max;
-    int M, N, m, n, mn;
-    double *x11, *x12, *x21, *x22, *d;
-    int ld11, ld12, ld21, ld22;
+    bcv_matrix_t *x11; bcv_matrix_t *x12;
+    bcv_matrix_t *x21; bcv_matrix_t *x22;
+    double *d;
 };
 
 
@@ -40,21 +41,18 @@ bcv_svd_alloc (int M_max, int N_max)
     assert( M_max >= 1 );
     assert( N_max >= 1 );
     
-    if (   (bcv      = malloc (sizeof (bcv_svd_t)))
-        && (bcv->x11 = malloc (M_max * N_max * sizeof (double)))
-        && (bcv->d   = malloc (MIN (M_max, N_max) *  sizeof (double)))
+    if (   (bcv            = malloc (sizeof (bcv_svd_t)))
+        && (bcv->x11       = malloc (sizeof (bcv_matrix_t)))
+        && (bcv->x21       = malloc (sizeof (bcv_matrix_t)))
+        && (bcv->x12       = malloc (sizeof (bcv_matrix_t)))
+        && (bcv->x22       = malloc (sizeof (bcv_matrix_t)))
+        && (bcv->x11->data = malloc (M_max * N_max * sizeof (double)))
+        && (bcv->d         = malloc (MIN (M_max, N_max) *  sizeof (double)))
        )
     {
         bcv->M_max = M_max;
         bcv->N_max = N_max;
-        bcv->ld11  = M_max;
-        bcv->ld12  = M_max;
-        bcv->ld21  = M_max;
-        bcv->ld22  = M_max;
-        bcv->m     = 0;
-        bcv->n     = 0;
-        bcv->mn    = 0;
-
+        
         return bcv;
     } 
         
@@ -83,33 +81,42 @@ bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx,
     assert (0 < n && n < N);
     assert (ldx >= M);
     
-    bcv->M  = M;
-    bcv->N  = N;
-    bcv->m  = m;
-    bcv->n  = n;
-    bcv->mn = MIN (m, n);
+    bcv->x11->m   = m;
+    bcv->x11->n   = n;
+    bcv->x11->lda = M;
 
-    bcv->x21 = bcv->x11 + m;
-    bcv->x12 = bcv->x11 + n * ldx;
-    bcv->x22 = bcv->x11 + m + n * ldx;
+    bcv->x21->m   = M - m;
+    bcv->x21->n   = n;
+    bcv->x21->data = bcv->x11->data + m;
+    bcv->x21->lda = M;
+    
+    bcv->x12->m    = m;
+    bcv->x12->n    = N - n;
+    bcv->x12->data = bcv->x11->data + n * M;
+    bcv->x12->lda  = M;
+
+    bcv->x22->m    = M - m;
+    bcv->x22->n    = N - n;
+    bcv->x22->data = bcv->x11->data + m + n * M;
+    bcv->x22->lda  = M;
 
     if (p == NULL && q == NULL)
     {
-        F77_CALL (dlacpy) ("R", &M, &N, x, &ldx, bcv->x11, &(bcv->ld11));
+        F77_CALL (dlacpy) ("R", &M, &N, x, &ldx, bcv->x11->data, &(bcv->x11->lda));
     }
     else if (p == NULL) /* permute the columns only */
     {
         for (j = 0; j < N; j++)
         {
             F77_CALL (dcopy) (&M, x + j * ldx, &one, 
-                              bcv->x11 + q[j] * (bcv->ld11), &one);
+                              bcv->x11->data + q[j] * (bcv->x11->lda), &one);
         }
     }
     else if (q == NULL) /* permute the rows only */
     {
         for (i = 0; i < M; i++)
         {
-            F77_CALL (dcopy) (&N, x + i, &ldx, bcv->x11 + p[i], &(bcv->ld11));
+            F77_CALL (dcopy) (&N, x + i, &ldx, bcv->x11->data + p[i], &(bcv->x11->lda));
         }
     }
     else /* permute both rows and columns */
@@ -119,7 +126,7 @@ bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx,
         for (j = 0; j < N; j++)
         {
             src = x + j * ldx;
-            dst = bcv->x11 + q[j] * (bcv->ld11);
+            dst = bcv->x11->data + q[j] * (bcv->x11->lda);
             
             for (i = 0; i < M; i++)
                 dst[p[i]] = src[i];
@@ -143,11 +150,20 @@ int
 bcv_svd_decompose (bcv_svd_t *bcv)
 {
     int info;
+    bcv_index_t M, N, m, n;
     
     assert (bcv);
     
-    info = decompose (bcv->M, bcv->N, bcv->m, bcv->n, bcv->x11, bcv->ld11, 
-                      bcv->x12, bcv->ld12, bcv->x21, bcv->ld21, bcv->d);
+    m = bcv->x11->m;
+    n = bcv->x11->n;
+    M = m + bcv->x22->m;
+    N = n + bcv->x22->n;
+    
+    info = decompose (M, N, m, n, 
+                      bcv->x11->data, bcv->x11->lda, 
+                      bcv->x12->data, bcv->x12->lda, 
+                      bcv->x21->data, bcv->x21->lda, 
+                      bcv->d);
                           
     return info;
 }
@@ -163,10 +179,10 @@ bcv_svd_get_resid (const bcv_svd_t *bcv, int *m2, int *n2, double **resid,
     assert (resid);
     assert (ldr);
     
-    *m2    = bcv->M - bcv->m;
-    *n2    = bcv->N - bcv->n;
-    *resid = bcv->x22;
-    *ldr   = bcv->ld22;
+    *m2    = bcv->x22->m;
+    *n2    = bcv->x22->n;
+    *resid = bcv->x22->data;
+    *ldr   = bcv->x22->lda;
 }
 
 
@@ -174,7 +190,7 @@ int
 bcv_svd_get_max_rank (bcv_svd_t *bcv)
 {
     assert (bcv);
-    return bcv->mn;
+    return MIN (bcv->x11->m, bcv->x11->n);
 }
 
 
@@ -182,25 +198,37 @@ void
 bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int k)
 {
     double alpha;
-
-    assert (bcv);
-    assert (k < bcv->mn);
+    bcv_index_t M, N, m, n, mn;
     
+    assert (bcv);
+    
+    m  = bcv->x11->m;
+    n  = bcv->x11->n;
+    M  = m + bcv->x22->m;
+    N  = n + bcv->x22->n;
+    mn = MIN (m,n);
+
+    assert (k < mn);
+
     alpha = scale / bcv->d[k];
-    update (bcv->M, bcv->N, bcv->m, bcv->n, k, alpha, bcv->x21, bcv->ld21,
-            bcv->x11, bcv->ld11, bcv->x12, bcv->ld12, bcv->x22, bcv->ld22);
+    update (M, N, m, n, k, alpha, 
+            bcv->x21->data, bcv->x21->lda,
+            bcv->x11->data, bcv->x11->lda, 
+            bcv->x12->data, bcv->x12->lda, 
+            bcv->x22->data, bcv->x22->lda);
 }
 
 
 double 
 bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
 {
-    int m2 = bcv->M - bcv->m;
-    int n2 = bcv->N - bcv->n;
+    int m2 = bcv->x22->m;
+    int n2 = bcv->x22->n;
     double frob;
     double mse;
     
-    frob = F77_CALL (dlange) ("F", &m2, &n2, bcv->x22, &(bcv->ld22), NULL);
+    frob = F77_CALL (dlange) ("F", &m2, &n2, 
+                              bcv->x22->data, &(bcv->x22->lda), NULL);
     mse  = (frob * frob) / (m2 * n2);
     
     return mse;
@@ -210,7 +238,16 @@ bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
 void
 bcv_svd_debug (const bcv_svd_t *bcv)
 {
+    bcv_index_t M, N, m, n, mn;
+    
     assert (bcv);
+    
+    m = bcv->x11->m;
+    n = bcv->x11->n;
+    M = m + bcv->x22->m;
+    N = n + bcv->x22->n;
+    mn = MIN (m,n);
+
     
     REprintf ("bcv_svd_t {\n"
               "    M_max : %d\n"
@@ -220,13 +257,13 @@ bcv_svd_debug (const bcv_svd_t *bcv)
               "    m     : %d\n"
               "    n     : %d\n"
               "    mn    : %d\n",
-              bcv->M_max, bcv->N_max, bcv->M, bcv->N, bcv->m, bcv->n, bcv->mn);
+              bcv->M_max, bcv->N_max, M, N, m, n, mn);
     
-    print_matrix ("x11", bcv->m, bcv->n, bcv->x11, bcv->ld11);
-    print_matrix ("x12", bcv->m, bcv->N - bcv->n, bcv->x12, bcv->ld12);
-    print_matrix ("x21", bcv->M - bcv->m, bcv->n, bcv->x21, bcv->ld21);
-    print_matrix ("x22", bcv->M - bcv->m, bcv->N - bcv->n, bcv->x22, bcv->ld22);
-    print_matrix ("  d", 1, bcv->mn, bcv->d, 1);
+    print_matrix ("x11", bcv->x11->m, bcv->x11->n, bcv->x11->data, bcv->x11->lda);
+    print_matrix ("x12", bcv->x12->m, bcv->x12->n, bcv->x12->data, bcv->x12->lda);
+    print_matrix ("x21", bcv->x21->m, bcv->x21->n, bcv->x21->data, bcv->x21->lda);
+    print_matrix ("x22", bcv->x22->m, bcv->x22->n, bcv->x22->data, bcv->x22->lda);
+    print_matrix ("  d", 1, mn, bcv->d, 1);
 
     REprintf ("}\n");
 }

@@ -1,0 +1,79 @@
+
+#ifndef _BCV_TYPES_H
+#define _BCV_TYPES_H
+
+#include <limits.h>
+
+/**
+ * bcv_index_t:
+ *
+ * A #bcv_index_t is the type of a matrix of vector index.  This type
+ * is used for storing matrix and vector dimensions.
+ */
+typedef int bcv_index_t;
+
+
+/**
+ * BCV_MAX_INDEX:
+ *
+ * The maximum value of a #bcv_index_t.
+ */
+#define BCV_MAX_INDEX INT_MAX
+
+
+/**
+ * bcv_vector_t:
+ * @n:    the number of elements in the vector
+ * @data: a pointer to the vector data
+ * @inc:  the stride of the vector
+ * 
+ * A #bcv_vector_t associates a pointer to vector-data with the vector
+ * length and stride.
+ */
+typedef struct _bcv_vector {
+    bcv_index_t n;
+    double *data;
+    bcv_index_t inc;
+} bcv_vector_t;
+
+#define _bcv_assert_valid_vector(x) \
+    assert (x); \
+    assert ((x)->n   >= 0); \
+    assert ((x)->inc >= 1)
+
+
+/**
+ * bcv_matrix_t:
+ * @m:    the number of rows in the matrix
+ * @n:    the number of columns in the matrix
+ * @data: a pointer to the matrix data
+ * @lda:  the leading dimension of the matrix
+ * 
+ * A #bcv_matrix_t associates a pointer to matrix-data with the matrix
+ * dimensions.  The matrix is assumed to be stored in column-major order.
+ */
+typedef struct _bcv_matrix {
+    bcv_index_t m;
+    bcv_index_t n;
+    double *data;
+    bcv_index_t lda;
+} bcv_matrix_t;
+
+#define _bcv_assert_valid_matrix(x) \
+    assert (x); \
+    assert ((x)->m >= 0); \
+    assert ((x)->n >= 0); \
+    assert ((x)->data); \
+    assert ((x)->lda >= 1); \
+    assert ((x)->lda >= (x)->m)
+
+
+/**
+ * bcv_error_t:
+ *
+ * A #bcv_error_t holds an error code.  This is 0 on success and nonzero
+ * on error.
+ */
+typedef bcv_index_t bcv_error_t;
+
+#endif
