@@ -20,7 +20,7 @@ struct _bcv_svd
 };
 
 
-static int
+static bcv_error_t
 decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
            double *d);
 
@@ -57,6 +57,7 @@ bcv_svd_alloc (int M_max, int N_max)
     } 
         
     error ("Could not allocate bcv_svd_t for size (%d,%d)", M_max, N_max);
+    return NULL;
 }
 
 
@@ -70,9 +71,6 @@ void
 bcv_svd_initp (bcv_svd_t *bcv, int M, int N, int m, int n, double *x, int ldx, 
                int *p, int *q)
 {
-    int one = 1;
-    int i, j;
-    
     assert (bcv);
     assert (x);
     assert (0 < M && M <= bcv->M_max);
@@ -242,7 +240,7 @@ bcv_svd_debug (const bcv_svd_t *bcv)
  *           x21 := x21 P
  *           d   := D
  */
-static int
+static bcv_error_t
 decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
            bcv_matrix_t *x21, double *d)
 {
@@ -258,11 +256,7 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
     int lwork = (m + n) * BLOCKSIZE;
     double work[lwork];
     double _d;
-    int info = 0;
-    int zero = 0;
-    int one = 1;
-    double dzero = 0.0;
-    int i;
+    bcv_error_t info = 0;
     bcv_matrix_uplo_t uplo;
 
     assert (m > 0);
@@ -342,9 +336,6 @@ update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt,
     n2 = x22->n;
     
     double work[m2];
-    double done = 1.0;
-    double dzero = 0.0;
-    int one = 1;
     
     assert (k < mn);
 

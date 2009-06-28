@@ -114,7 +114,7 @@ SEXP
 driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 {
     double *x;
-    int M, N, K, L, m, n, r, mn, k, i, j, kmax;
+    int M, N, K, L, k, i, j, kmax;
     bcv_svd_t *bcv;
     SEXP mse_R, dim;
     double *mse;
