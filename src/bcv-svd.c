@@ -19,8 +19,9 @@ struct _bcv_svd
 };
 
 
-static int decompose (int M, int N, int m, int n, double *x11, int ld11, 
-                      double *x12, int ld12, double *x21, int ld21, double *d);
+static int
+decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
+           double *d);
 
 static void update (int M, int N, int m, int n, int k, double alpha,
                     const double *x21, int ld21, const double *vt, int ldvt,
@@ -159,11 +160,7 @@ bcv_svd_decompose (bcv_svd_t *bcv)
     M = m + bcv->x22->m;
     N = n + bcv->x22->n;
     
-    info = decompose (M, N, m, n, 
-                      bcv->x11->data, bcv->x11->lda, 
-                      bcv->x12->data, bcv->x12->lda, 
-                      bcv->x21->data, bcv->x21->lda, 
-                      bcv->d);
+    info = decompose (bcv->x11, bcv->x12, bcv->x21, bcv->d);
                           
     return info;
 }
@@ -277,12 +274,17 @@ bcv_svd_debug (const bcv_svd_t *bcv)
  *           d   := D
  */
 static int
-decompose (int M, int N, int m, int n, double *x11, int ld11, double *x12, 
-           int ld12, double *x21, int ld21, double *d)
+decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, 
+           bcv_matrix_t *x21, double *d)
 {
-    int m2 = M - m;
-    int n2 = N - n;
-    int mn = MIN (m, n);
+    bcv_index_t m, n, mn, m2, n2;
+    
+    m  = x11->m;
+    n  = x11->n;
+    mn = MIN (m, n);
+    m2 = x21->m;
+    n2 = x12->n;
+    
     double e[mn], tauq[mn], taup[mn];
     int lwork = (m + n) * BLOCKSIZE;
     double work[lwork];
@@ -299,39 +301,41 @@ decompose (int M, int N, int m, int n, double *x11, int ld11, double *x12,
     
     if (m == 1) /* x11 = d v^T */
     {
-        d[0] = F77_CALL (dnrm2) (&n, x11, &ld11);
+        d[0] = F77_CALL (dnrm2) (&n, x11->data, &(x11->lda));
 
         _d = 1.0 / d[0];
-        F77_CALL (dscal) (&n, &_d, x11, &ld11);
+        F77_CALL (dscal) (&n, &_d, x11->data, &(x11->lda));
     }
     else if (n == 1) /* x11 = u d */
     {
-        d[0] = F77_CALL (dnrm2) (&m, x11, &one);
+        d[0] = F77_CALL (dnrm2) (&m, x11->data, &one);
         
         /* x12 := u^T x12 */
         _d = 1.0 / d[0];
-        F77_CALL (dgemv) ("T", &m, &n2, &_d, x12, &ld12, x11, &one, &dzero,
-                          work, &one);
-        F77_CALL (dcopy) (&n2, work, &one, x12, &ld12);
+        F77_CALL (dgemv) ("T", &m, &n2, &_d, x12->data, &(x12->lda), 
+                          x11->data, &one, &dzero, work, &one);
+        F77_CALL (dcopy) (&n2, work, &one, x12->data, &(x12->lda));
 
-        x11[0] = 1.0;
+        x11->data[0] = 1.0;
     }
     else 
     {
         /* decompose x11 := Q B P^T */ 
-        F77_CALL (dgebrd) (&m, &n, x11, &ld11, d, e, tauq, taup, work, &lwork, 
-                           &info);
+        F77_CALL (dgebrd) (&m, &n, x11->data, &(x11->lda), d, e, tauq, taup, 
+                           work, &lwork, &info);
     
         if (info == 0)
         {
             /* set x21 := x21 P */
-            F77_CALL (dormbr) ("P", "R", "N", &m2, &n, &m, x11, 
-                               &ld11, taup, x21, &ld21, work, &lwork, &info);
+            F77_CALL (dormbr) ("P", "R", "N", &m2, &n, &m, 
+                               x11->data, &(x11->lda), taup, 
+                               x21->data, &(x21->lda), work, &lwork, &info);
             assert (info == 0);
         
             /* set x12 := Q^T x12 */
-            F77_CALL (dormbr) ("Q", "L", "T", &m, &n2, &n, x11, 
-                               &ld11, tauq, x12, &ld12, work, &lwork, &info);
+            F77_CALL (dormbr) ("Q", "L", "T", &m, &n2, &n, 
+                               x11->data, &(x11->lda), tauq, 
+                               x12->data, &(x12->lda), work, &lwork, &info);
             assert (info == 0);
 
             /* decompose B = U S V^T
@@ -339,9 +343,10 @@ decompose (int M, int N, int m, int n, double *x11, int ld11, double *x12,
              *        x12 := U^T x12
              */
             uplo = (m >= n) ? "U" : "L";
-            set_identity (mn, n, x11, ld11);
-            F77_CALL (dbdsqr) (uplo, &mn, &n, &zero, &n2, d, e, x11, &ld11, 
-                               NULL, &one, x12, &ld12, work, &info);
+            set_identity (mn, n, x11->data, x11->lda);
+            F77_CALL (dbdsqr) (uplo, &mn, &n, &zero, &n2, d, e, 
+                               x11->data, &(x11->lda), NULL, &one, 
+                               x12->data, &(x12->lda), work, &info);
         }
     }
     
