@@ -23,7 +23,7 @@ check <- function( cv, x )
             
             col <- i + ( j-1 )*cv$K 
             expected[ 1, col ] <- mean( x22^2 )
-            for( k in 1:cv$max.rank )
+            for( k in seq_len( cv$max.rank ) )
             {
                 x22.hat <- (     ( x21 %*% v1[,1:k,drop=FALSE] )
                              %*% diag( 1.0 / d[1:k], k, k )
