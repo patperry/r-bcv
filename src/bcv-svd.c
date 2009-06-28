@@ -8,8 +8,7 @@
 #include "bcv-matrix-private.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define BLOCKSIZE 64
-
+#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 struct _bcv_svd
 {
@@ -177,8 +176,8 @@ bcv_svd_get_resid_rss (const bcv_svd_t *bcv)
 static bcv_error_t
 bcv_svd_decompose (bcv_svd_t *bcv)
 {
-    bcv_error_t result = 0;
-    bcv_index_t m, n, mn;
+    bcv_error_t result = 0; 
+    bcv_index_t m, n, mn, m2, n2;
     bcv_matrix_uplo_t uplo;
     
     assert (bcv);
@@ -190,41 +189,68 @@ bcv_svd_decompose (bcv_svd_t *bcv)
     m  = bcv->x11->m;
     n  = bcv->x11->n;
     mn = MIN (m, n);
+    m2 = bcv->x22->m;
+    n2 = bcv->x22->n;
 
-    /* decompose x11 := Q B P^T */ 
-    bcv_index_t lwork = (m + n) * BLOCKSIZE;
-    double e[mn];
-    double tauq[mn];
-    double taup[mn];
-    double work[lwork];
-    _bcv_lapack_dgebrd (bcv->x11, bcv->d, e, tauq, taup, work, lwork);
-
-    /* set x21 := x21 P */
-    _bcv_lapack_dormbr (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
-                        BCV_MATRIX_NOTRANS, bcv->x11, taup, bcv->x21, 
-                        work, lwork);
-
-    /* set x12 := Q^T x12 */
-    _bcv_lapack_dormbr (BCV_MATRIX_VECT_Q, BCV_MATRIX_LEFT, 
-                        BCV_MATRIX_TRANS, bcv->x11, tauq, bcv->x12, 
-                        work, lwork);
-
-    /* we can now drop the extra rows and columns; they never enter into
-     * the svd.
-     */
-    uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
-    bcv->x11->m = mn;
-    bcv->x11->n = mn;
-    bcv->x12->m = mn;
-    bcv->x21->n = mn;
+    if (mn > 0 && m2 > 0 && n2 > 0)
+    {
+        bcv_index_t dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
+        bcv_index_t dormbr_P_lwork = 
+            _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
+                                         m, n, m2, n);
+        bcv_index_t dormbr_Q_lwork =
+            _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
+                                         m, n, m, n2);
+        bcv_index_t dbdsqr_lwork =
+            _bcv_lapack_dbdsqr_work_len (mn, BCV_FALSE);
     
-    /* decompose B = Q1 S P1^T
-     *    set x11 := P1^T 
-     *        x12 := Q1^T x12
-     */
-    _bcv_matrix_set_identity (bcv->x11);
-    result = _bcv_lapack_dbdsqr (uplo, mn, bcv->d, e, 
-                                 bcv->x11, NULL, bcv->x12, work);
+        if (dgebrd_lwork > 0 
+            && dormbr_P_lwork > 0 
+            && dormbr_Q_lwork > 0 
+            && dbdsqr_lwork > 0)
+        {
+            bcv_index_t lwork = MAX (MAX (dgebrd_lwork, dormbr_P_lwork),
+                                     MAX (dormbr_Q_lwork, dbdsqr_lwork));
+            double e[mn];
+            double tauq[mn];
+            double taup[mn];
+            double work[lwork];
+
+            /* decompose x11 := Q B P^T */ 
+            _bcv_lapack_dgebrd (bcv->x11, bcv->d, e, tauq, taup, work, lwork);
+
+            /* set x21 := x21 P */
+            _bcv_lapack_dormbr (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
+                                BCV_MATRIX_NOTRANS, bcv->x11, taup, bcv->x21, 
+                                work, lwork);
+
+            /* set x12 := Q^T x12 */
+            _bcv_lapack_dormbr (BCV_MATRIX_VECT_Q, BCV_MATRIX_LEFT, 
+                                BCV_MATRIX_TRANS, bcv->x11, tauq, bcv->x12, 
+                                work, lwork);
+
+            /* we can now drop the extra rows and columns; they never enter 
+             * into the svd.
+             */
+            uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
+            bcv->x11->m = mn;
+            bcv->x11->n = mn;
+            bcv->x12->m = mn;
+            bcv->x21->n = mn;
+    
+            /* decompose B = Q1 S P1^T
+             *    set x11 := P1^T 
+             *        x12 := Q1^T x12
+             */
+            _bcv_matrix_set_identity (bcv->x11);
+            result = _bcv_lapack_dbdsqr (uplo, mn, bcv->d, e, 
+                                         bcv->x11, NULL, bcv->x12, work);
+        }
+        else
+        {
+            result = 1; /* TODO: add code for no memory */
+        }
+    }
     
     return result;
 }
