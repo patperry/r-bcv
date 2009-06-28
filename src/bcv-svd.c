@@ -142,15 +142,15 @@ bcv_svd_get_max_rank (bcv_svd_t *bcv)
 
 
 double 
-bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
+bcv_svd_get_resid_rss (const bcv_svd_t *bcv)
 {
-    int m2 = bcv->x22->m;
-    int n2 = bcv->x22->n;
     double frob;
     double mse;
     
+    assert (bcv);
+    
     frob = _bcv_matrix_norm_frob (bcv->x22);
-    mse  = (frob * frob) / (m2 * n2);
+    mse  = (frob * frob);
     
     return mse;
 }

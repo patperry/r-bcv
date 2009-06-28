@@ -116,8 +116,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     double *x;
     int M, N, K, L, k, i, j, kmax;
     bcv_svd_t *bcv;
-    SEXP mse_R, dim;
-    double *mse;
+    SEXP rss_R, dim;
+    double *rss;
     perm_t perm;
     
     if (!isMatrix (xx) || !isNumeric (xx))
@@ -132,8 +132,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 
     perm_init (&perm, M, N, K, L, INTEGER_POINTER (s_r), INTEGER_POINTER (s_c));
     
-    PROTECT (mse_R = allocVector (REALSXP, (kmax + 1) * K * L));
-    mse = NUMERIC_POINTER (mse_R);
+    PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
+    rss = NUMERIC_POINTER (rss_R);
     bcv = bcv_svd_alloc (M, N);
 
     for (j = 1; j <= L; j++)
@@ -150,11 +150,11 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             bcv_svd_initp (bcv, M, N, perm.m, perm.n, x, M, perm.ir, perm.jc);
             /* TODO: check for error return */
 
-            *mse++ = bcv_svd_get_resid_mse (bcv);
+            *rss++ = bcv_svd_get_resid_rss (bcv);
             for (k = 0; k < kmax; k++)
             {
                 bcv_svd_update_resid (bcv, -1.0, k);
-                *mse++ = bcv_svd_get_resid_mse (bcv);            
+                *rss++ = bcv_svd_get_resid_rss (bcv);            
             }
         }
     }
@@ -164,8 +164,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     PROTECT (dim = allocVector (INTSXP, 2));
     INTEGER (dim) [0] = (kmax + 1);
     INTEGER (dim) [1] = K * L;
-    setAttrib (mse_R, R_DimSymbol, dim);
+    setAttrib (rss_R, R_DimSymbol, dim);
     
     UNPROTECT (2);
-    return mse_R;
+    return rss_R;
 }

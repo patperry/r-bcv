@@ -22,13 +22,13 @@ check <- function( cv, x )
             x22 <- get.x22( cv, x, i, j )
             
             col <- i + ( j-1 )*cv$K 
-            expected[ 1, col ] <- mean( x22^2 )
+            expected[ 1, col ] <- sum( x22^2 )
             for( k in seq_len( cv$max.rank ) )
             {
                 x22.hat <- (     ( x21 %*% v1[,1:k,drop=FALSE] )
                              %*% diag( 1.0 / d[1:k], k, k )
                              %*% ( t( u1[,1:k,drop=FALSE] ) %*% x12 ) )
-                expected[ k + 1, col ] <- mean( ( x22 - x22.hat )^2 )                
+                expected[ k + 1, col ] <- sum( ( x22 - x22.hat )^2 )                
             }
         }
     }
