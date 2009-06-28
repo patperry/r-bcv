@@ -4,18 +4,52 @@
 
 #include "bcv-types.h"
 
+/**
+ * bcv_matrix_transpose_t:
+ *
+ * A #bcv_matrix_transpose_t specifies a transpose operation to apply
+ * to a matrix.  For matrix "A", it can specify one "A", "A^T", or "A^H"
+ * by %BCV_MATRIX_NOTRANS, %BCV_MATRIX_TRANS, or %BCV_MATRIX_CONJTRANS,
+ * respectively.
+ */
 typedef enum _bcv_matrix_transpose { 
     BCV_MATRIX_NOTRANS, 
     BCV_MATRIX_TRANS, 
     BCV_MATRIX_CONJTRANS 
 } bcv_matrix_transpose_t;
 
+/**
+ * _bcv_matrix_set_identity:
+ * @a: a matrix
+ *
+ * Set the off-diagonal elements of @a to zero and set the diagonal elements
+ * to one.
+ */
 void
 _bcv_matrix_set_identity (bcv_matrix_t *a);
 
+/**
+ * _bcv_matrix_copy:
+ * @dst: the destination matrix
+ * @src: the source matrix
+ *
+ * Elementwise copy so that @dst[i,j] := src[i,j] for all i,j.  @dst
+ * and @src must have the same dimensions.
+ */
 void
 _bcv_matrix_copy (bcv_matrix_t *dst, const bcv_matrix_t *src);
 
+/**
+ * _bcv_matrix_permute_copy:
+ * @dst: the destination matrix
+ * @src: the source matrix
+ * @p: a row permutation
+ * @q: a column permutation
+ *
+ * Elementwise copy with a permutation so that @dst[p[i],q[j]] := src[i,j].
+ * If p or q is NULL then the permutation is assumed to be the identity,
+ * so that p[i] (respectively, q[i]) is equal to i.
+ */
 void
 _bcv_matrix_permute_copy (bcv_matrix_t *dst, const bcv_matrix_t *src,
                           bcv_index_t *p, bcv_index_t *q);
@@ -29,6 +63,9 @@ _bcv_matrix_permute_copy (bcv_matrix_t *dst, const bcv_matrix_t *src,
  */
 double
 _bcv_matrix_norm_frob (const bcv_matrix_t *a);
+
+
+/* low-level BLAS routines */
 
 double
 _bcv_blas_dnrm2 (const bcv_vector_t *x);
