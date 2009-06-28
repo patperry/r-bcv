@@ -24,10 +24,6 @@ static bcv_error_t
 decompose (bcv_matrix_t *x11, bcv_matrix_t *x12, bcv_matrix_t *x21, 
            double *d);
 
-static void
-update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt, 
-        bcv_matrix_t *x12, bcv_matrix_t *x22);
-
 static void print_matrix (const char *name, int m, int n, const double *x, 
                           int ldx);
 
@@ -163,27 +159,6 @@ bcv_svd_get_max_rank (bcv_svd_t *bcv)
 }
 
 
-void
-bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int k)
-{
-    double alpha;
-    bcv_index_t M, N, m, n, mn;
-    
-    assert (bcv);
-    
-    m  = bcv->x11->m;
-    n  = bcv->x11->n;
-    M  = m + bcv->x22->m;
-    N  = n + bcv->x22->n;
-    mn = MIN (m,n);
-
-    assert (k < mn);
-
-    alpha = scale / bcv->d[k];
-    update (k, alpha, bcv->x21, bcv->x11, bcv->x12, bcv->x22);
-}
-
-
 double 
 bcv_svd_get_resid_mse (const bcv_svd_t *bcv)
 {
@@ -286,38 +261,42 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
     return info;
 }
 
+
 /*
- * We have x22_hat = x21 v d x12
- *                 = \sum_{k=1}^{K} d[k] * (x21 v(:,k)) (x12(k,:))^T
- *
  * This function updates x22 as:
- *         x22 := x22 + alpha * (x21 v(:,k)) (x12(k,:))^T
+ *         x22 := x22 + (scale/d[i]) * u[i] * v[i]^T
  */
-static void
-update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt, 
-        bcv_matrix_t *x12, bcv_matrix_t *x22)
+void
+bcv_svd_update_resid (bcv_svd_t *bcv, double scale, int i)
 {
-    bcv_index_t m, n, m2, n2, mn;
+    assert (bcv);
+    assert (0 <= i && i < bcv_svd_get_max_rank (bcv));
 
-    m  = x12->m;
-    n  = x21->n;
-    mn = MIN (m, n);
-    m2 = x22->m;
-    n2 = x22->n;
+    double alpha = scale / bcv->d[i];
     
+    /* x11 stores P1^T
+     * Set p1 := ei^T P1^T = P1 ei 
+     */
+    bcv_vector_t p1 = { bcv->x11->n, bcv->x11->data + i, bcv->x11->lda };
+    
+    /* x21 stores x21 P
+     * Set u := x21 P u = x21 P P1 ei
+     *
+     * In bcv_svd_size, we have been careful to make sure that the extra work
+     * space has room for at least M doubles.
+     */
+    bcv_index_t m2 = bcv->x21->m;
     double work[m2];
+    bcv_vector_t u = { m2, work, 1 };
+    _bcv_blas_dgemv (BCV_MATRIX_NOTRANS, 1.0, bcv->x21, &p1, 0.0, &u);
+
+    /* x12 stores Q1^T Q^T x12
+     * Set v := ei^T Q1^T Q^T x12
+     */
+    bcv_vector_t v = { bcv->x12->n, bcv->x12->data + i, bcv->x12->lda };
     
-    assert (k < mn);
-
-    bcv_vector_t v_k   = {  n, vt->data  + k, vt->lda  };
-    bcv_vector_t x12_k = { n2, x12->data + k, x12->lda };
-    bcv_vector_t u     = { m2, work,         1 };
-
-    /* u := x21 * v(:,k)  ( = x21 : vt(k,:) ) */
-    _bcv_blas_dgemv (BCV_MATRIX_NOTRANS, 1.0, x21, &v_k, 0.0, &u);
-
-    /* x22 := x22 + alpha * u x12(k,:)^T */
-    _bcv_blas_dger (alpha, &u, &x12_k, x22);
+    /* Update x22 := x22 + alpha * u v^T */
+    _bcv_blas_dger (alpha, &u, &v, bcv->x22);
 }
 
 
