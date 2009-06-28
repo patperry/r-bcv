@@ -166,7 +166,7 @@ _bcv_matrix_permute_copy (bcv_matrix_t *dst, const bcv_matrix_t *src,
 double
 _bcv_matrix_norm_frob (const bcv_matrix_t *a)
 {
-    return _bcv_lapack_dlange (BCV_MATRIX_NORM_FROB, a);
+    return _bcv_lapack_dlange (BCV_MATRIX_NORM_FROB, a, NULL);
 }
 
 
@@ -252,7 +252,8 @@ _bcv_lapack_dlacpy (bcv_matrix_uplo_t uplo, const bcv_matrix_t *a,
 
 
 double
-_bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a)
+_bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a, 
+                    double *work)
 {
     double result = 0.0;
     
@@ -260,15 +261,8 @@ _bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a)
     
     if (a->m > 0 && a->n > 0)
     {
-        if (norm == BCV_MATRIX_NORM_INF) {
-            double work[a->m];
-            
-            result = _bcv_dlange_f77 (_BCV_F77_NORM (norm), &(a->m), &(a->n),
-                                      a->data, &(a->lda), work);
-        } else {
-            result = _bcv_dlange_f77 (_BCV_F77_NORM (norm), &(a->m), &(a->n),
-                                      a->data, &(a->lda), NULL);
-        }
+        result = _bcv_dlange_f77 (_BCV_F77_NORM (norm), &(a->m), &(a->n),
+                                  a->data, &(a->lda), work);
     }
     
     return result;

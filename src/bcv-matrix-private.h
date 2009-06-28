@@ -79,7 +79,8 @@ _bcv_lapack_dlacpy (bcv_matrix_uplo_t uplo, const bcv_matrix_t *a,
                     bcv_matrix_t *b);
                     
 double
-_bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a);
+_bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a, 
+                    double *work);
 
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
