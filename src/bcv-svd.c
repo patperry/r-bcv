@@ -270,20 +270,24 @@ decompose (bcv_matrix_t *x11, bcv_matrix_t *x12,
     
     if (m == 1) /* x11 = d v^T */
     {
-        d[0] = F77_CALL (dnrm2) (&n, x11->data, &(x11->lda));
-
-        _d = 1.0 / d[0];
-        F77_CALL (dscal) (&n, &_d, x11->data, &(x11->lda));
+        bcv_vector_t x11_vec = { n, x11->data, x11->lda };
+        
+        d[0] = _bcv_blas_dnrm2 (&x11_vec);
+        _d   = 1.0 / d[0];
+        _bcv_blas_dscal (_d, &x11_vec);
     }
     else if (n == 1) /* x11 = u d */
     {
-        d[0] = F77_CALL (dnrm2) (&m, x11->data, &one);
+        bcv_vector_t x11_vec  = { m,  x11->data, 1        };
+        bcv_vector_t x12_vec  = { n2, x12->data, x12->lda };
+        bcv_vector_t work_vec = { n2, work,      1        };
+        
+        d[0] = _bcv_blas_dnrm2 (&x11_vec);
         
         /* x12 := u^T x12 */
         _d = 1.0 / d[0];
-        F77_CALL (dgemv) ("T", &m, &n2, &_d, x12->data, &(x12->lda), 
-                          x11->data, &one, &dzero, work, &one);
-        F77_CALL (dcopy) (&n2, work, &one, x12->data, &(x12->lda));
+        _bcv_blas_dgemv (BCV_MATRIX_TRANS, _d, x12, &x11_vec, 0, &work_vec);
+        _bcv_blas_dcopy (&work_vec, &x12_vec);
 
         x11->data[0] = 1.0;
     }
@@ -341,20 +345,22 @@ update (int k, double alpha, bcv_matrix_t *x21, bcv_matrix_t *vt,
     m2 = x22->m;
     n2 = x22->n;
     
-    double u[m2];
+    double work[m2];
     double done = 1.0;
     double dzero = 0.0;
     int one = 1;
     
     assert (k < mn);
 
+    bcv_vector_t v_k   = {  n, vt->data  + k, vt->lda  };
+    bcv_vector_t x12_k = { n2, x12->data + k, x12->lda };
+    bcv_vector_t u     = { m2, work,         1 };
+
     /* u := x21 * v(:,k)  ( = x21 : vt(k,:) ) */
-    F77_CALL (dgemv) ("N", &m2, &n, &done, x21->data, &(x21->lda), 
-                      vt->data + k, &(vt->lda), &dzero, u, &one);
+    _bcv_blas_dgemv (BCV_MATRIX_NOTRANS, 1.0, x21, &v_k, 0.0, &u);
 
     /* x22 := x22 + alpha * u x12(k,:)^T */
-    F77_CALL (dger) (&m2, &n2, &alpha, u, &one, (x12->data + k), &(x12->lda), 
-                     x22->data, &(x22->lda));
+    _bcv_blas_dger (alpha, &u, &x12_k, x22);
 }
 
 
