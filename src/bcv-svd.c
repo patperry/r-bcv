@@ -362,8 +362,7 @@ bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
      * space has room for at least M doubles.
      */
     bcv_index_t m2 = bcv->x21->m;
-    double work[m2];
-    bcv_vector_t u = { m2, work, 1 };
+    bcv_vector_t u = { m2, bcv->work, 1 };
     _bcv_blas_dgemv (BCV_MATRIX_NOTRANS, 1.0, bcv->x21, &p1, 0.0, &u);
 
     /* x12 stores Q1^T Q^T x12
