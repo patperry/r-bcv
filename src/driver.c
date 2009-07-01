@@ -137,8 +137,11 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     
     PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
     rss = NUMERIC_POINTER (rss_R);
-    bcv = bcv_svd_alloc (M, N);
-
+    bcv_holdin_t max_holdin = { M, N };
+    bcv = bcv_svd_alloc (max_holdin, M, N);
+    
+    if (!bcv)
+        error ("Could not allocate bcv_svd_t for size (%d,%d)", M, N);
 
     for (j = 1; j <= L; j++)
     {

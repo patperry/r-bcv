@@ -1,10 +1,8 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <strings.h>
-#include <R.h>
-#include <R_ext/Lapack.h>
 #include "bcv-svd.h"
-#include "bcv-types.h"
 #include "bcv-matrix-private.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -12,10 +10,10 @@
 
 struct _bcv_svd
 {
-    bcv_index_t M_max, N_max;
     bcv_matrix_t *x11; bcv_matrix_t *x12;
     bcv_matrix_t *x21; bcv_matrix_t *x22;
     double *d;
+    void *work;
 };
 
 static void
@@ -29,31 +27,92 @@ static bcv_index_t
 bcv_svd_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
 
 
-bcv_svd_t *
-bcv_svd_alloc (bcv_index_t M_max, bcv_index_t N_max)
+size_t
+bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
-    bcv_svd_t *bcv;
+    size_t total, decompose_e_tauq_taup, update_u, work_len, result = 0;
+    bcv_index_t m, n, mn;
+    bcv_index_t decompose_lwork;
     
-    assert (M_max >= 1);
-    assert (N_max >= 1);
+    _bcv_assert_valid_holdin (&holdin, M, N);
+    m  = holdin.m;
+    n  = holdin.n;
+    mn = MIN (m,n);
     
-    if (   (bcv            = malloc (sizeof (bcv_svd_t)))
-        && (bcv->x11       = malloc (sizeof (bcv_matrix_t)))
-        && (bcv->x21       = malloc (sizeof (bcv_matrix_t)))
-        && (bcv->x12       = malloc (sizeof (bcv_matrix_t)))
-        && (bcv->x22       = malloc (sizeof (bcv_matrix_t)))
-        && (bcv->x11->data = malloc (M_max * N_max * sizeof (double)))
-        && (bcv->d         = malloc (MIN (M_max, N_max) *  sizeof (double)))
-       )
+    /* space for the bcv_svd_t and x11, x12, x21, x22 */
+    if (sizeof (bcv_matrix_t) <= SIZE_MAX - sizeof (bcv_svd_t) / 4) 
     {
-        bcv->M_max = M_max;
-        bcv->N_max = N_max;
+        total = sizeof (bcv_matrix_t) + 4 * sizeof (bcv_svd_t);
         
-        return bcv;
-    } 
-        
-    error ("Could not allocate bcv_svd_t for size (%d,%d)", M_max, N_max);
-    return NULL;
+        /* space for the M*N data matrix */
+        if (M + 1 <= SIZE_MAX / sizeof (double) / N
+            && total <= SIZE_MAX - M * N * sizeof (double))
+        {
+            total +=  M * N * sizeof (double);
+            
+            /* space for d */
+            if (mn <= (SIZE_MAX - total) / sizeof (double))
+            {
+                total += mn * sizeof (double);
+                
+                /* work space; the memory used by decompose() can be
+                 * re-used by update()  
+                 */
+                decompose_e_tauq_taup = 3 * mn * sizeof (double);
+                decompose_lwork = bcv_svd_decompose_work_len (holdin, M, N);
+                update_u  = M * sizeof (double);
+                
+                if (mn <= SIZE_MAX / sizeof (double) / 3
+                    && (decompose_lwork > 0 || mn == 0)
+                    && decompose_lwork <= (SIZE_MAX - decompose_e_tauq_taup)
+                                          / sizeof (double)
+                    && M <= SIZE_MAX / sizeof (double))
+                {
+                    work_len = MAX (decompose_e_tauq_taup 
+                                    + decompose_lwork * sizeof (double),
+                                    update_u);
+
+                    if (work_len <= SIZE_MAX - total) 
+                    {
+                        total += work_len;
+                        result = total;
+                    }
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
+
+bcv_svd_t *
+bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+{
+    bcv_svd_t *bcv = NULL;
+    void *work;
+    size_t size;
+    
+    assert (M >= 0);
+    assert (N >= 0);
+    _bcv_assert_valid_holdin (&holdin, M, N);
+    
+    size = bcv_svd_size (holdin, M, N);
+    
+    if (size > 0
+        && (work = malloc (size)))
+    {
+        bcv = work;      work += sizeof (bcv_svd_t);
+        bcv->x11 = work; work += sizeof (bcv_matrix_t);
+        bcv->x21 = work; work += sizeof (bcv_matrix_t);
+        bcv->x12 = work; work += sizeof (bcv_matrix_t);
+        bcv->x22 = work; work += sizeof (bcv_matrix_t);
+        bcv->x11->data = work; work += M * N * sizeof (double);
+        bcv->d = work; work += MIN (holdin.m, holdin.n) * sizeof (double);
+        bcv->work = work;
+    }
+    
+    return bcv;
 }
 
 void 
@@ -61,12 +120,6 @@ bcv_svd_free (bcv_svd_t *bcv)
 {
     if (bcv)
     {
-        free (bcv->d);
-        free (bcv->x11->data);
-        free (bcv->x11);
-        free (bcv->x12);
-        free (bcv->x21);
-        free (bcv->x22);
         free (bcv);
     }
 }
@@ -91,9 +144,6 @@ bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
     N = x->n;
     _bcv_assert_valid_holdin (&holdin, M, N);
 
-    assert (M <= bcv->M_max);
-    assert (N <= bcv->N_max);
-    
     bcv_init_storage (bcv, holdin, M, N);
     bcv_matrix_t dst = { M, N, bcv->x11->data, M };
     _bcv_matrix_permute_copy (&dst, x, p, q);
@@ -169,6 +219,7 @@ bcv_svd_get_resid_rss (const bcv_svd_t *bcv)
 }
 
 
+
 /*
  * Decompose x11 = Q Q1 D P1^T P^T
  * Set       x11  := P1^T
@@ -222,7 +273,7 @@ bcv_svd_decompose (bcv_svd_t *bcv)
                                 BCV_MATRIX_TRANS, bcv->x11, tauq, bcv->x12, 
                                 work, lwork);
 
-            /* we can now drop the extra rows or columns; they never enter
+            /* we can now drop the extra rows or columns; they never enter 
              * into the svd.
              */
             bcv->x11->m = mn;
@@ -253,34 +304,36 @@ static bcv_index_t
 bcv_svd_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
     bcv_index_t result = 0;
-    bcv_index_t m, n, mn, m2, n2;
+    bcv_index_t m, n, mn;
     bcv_index_t dgebrd_lwork, dormbr_P_lwork, dormbr_Q_lwork, dbdsqr_lwork;
     _bcv_assert_valid_holdin (&holdin, M, N);
-
+    
     m  = holdin.m;
     n  = holdin.n;
     mn = MIN (m, n);
-    m2 = M - m;
-    n2 = N - n;
 
+    /* We could be more precise below, replacing M with M - m and
+     * N with N - n in the calls to _dormbr_work_len.  We prefer to
+     * use the conservative values instead so that 
+     * bcv_svd_decompose_work_len() is monotonic in the holdin size. */
     dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
-    dormbr_P_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P,
-                                                  BCV_MATRIX_RIGHT,
-                                                  m, n, m2, n);
-    dormbr_Q_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P,
-                                                  BCV_MATRIX_RIGHT,
-                                                  m, n, m, n2);
+    dormbr_P_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, 
+                                                  BCV_MATRIX_RIGHT, 
+                                                  m, n, M, n);
+    dormbr_Q_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, 
+                                                  BCV_MATRIX_RIGHT, 
+                                                  m, n, m, N);
     dbdsqr_lwork   = _bcv_lapack_dbdsqr_work_len (mn, BCV_FALSE);
-
-    if (dgebrd_lwork > 0
-        && dormbr_P_lwork > 0
-        && dormbr_Q_lwork > 0
+    
+    if (dgebrd_lwork > 0 
+        && dormbr_P_lwork > 0 
+        && dormbr_Q_lwork > 0 
         && dbdsqr_lwork > 0)
     {
         result = MAX (MAX (dgebrd_lwork, dormbr_P_lwork),
                       MAX (dormbr_Q_lwork, dbdsqr_lwork));
     }
-
+    
     return result;
 }
 

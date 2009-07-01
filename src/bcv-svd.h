@@ -2,6 +2,7 @@
 #ifndef _BCV_SVD_H
 #define _BCV_SVD_H
 
+#include <stdlib.h>
 #include "bcv-types.h"
 
 /** 
@@ -36,15 +37,32 @@ typedef struct _bcv_holdin {
 
 /** 
  * bcv_svd_alloc:
- * @M_max: the maximum number of rows in the matrix
- * @N_max the maximum number of columns in the matrix
+ * @holdin: the size of the held-in matrix.
+ * @M: the number of rows in the matrix
+ * @N: the number of columns in the matrix
  * 
  * Allocate a workspace for a BCV computation large enough to cross-validate 
- * a matrix with @M_max rows and @N_max columns.  The workspace should be 
+ * a matrix with @M rows and @N columns.  The workspace should be 
  * freed with bcv_svd_free().
+ *
+ * This function is monotonic in all of its arguments.
  */
 bcv_svd_t *
-bcv_svd_alloc (bcv_index_t M_max, bcv_index_t N_max);
+bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
+
+/**
+ * bcv_svd_size:
+ * @holdin: the size of the held-in matrix.
+ * @M: the number of rows in the matrix
+ * @N: the number of columns in the matrix
+ *
+ * Returns the size (in bytes) of a BCV workspace necessary to cross-validate
+ * a matrix with the given dimensions, or 0 if the workspace is larger
+ * than %SIZE_MAX bytes.
+ */
+size_t
+bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
+
 
 /** 
  * bcv_svd_init:
