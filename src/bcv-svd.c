@@ -25,6 +25,9 @@ bcv_init_storage (bcv_svd_t *bcv, bcv_holdin_t holdin,
 static bcv_error_t
 bcv_svd_decompose (bcv_svd_t *bcv);
 
+static bcv_index_t
+bcv_svd_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
+
 
 bcv_svd_t *
 bcv_svd_alloc (bcv_index_t M_max, bcv_index_t N_max)
@@ -194,23 +197,13 @@ bcv_svd_decompose (bcv_svd_t *bcv)
 
     if (mn > 0 && m2 > 0 && n2 > 0)
     {
-        bcv_index_t dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
-        bcv_index_t dormbr_P_lwork = 
-            _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
-                                         m, n, m2, n);
-        bcv_index_t dormbr_Q_lwork =
-            _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, BCV_MATRIX_RIGHT, 
-                                         m, n, m, n2);
-        bcv_index_t dbdsqr_lwork =
-            _bcv_lapack_dbdsqr_work_len (mn, BCV_FALSE);
+        bcv_holdin_t holdin = { m, n };
+        bcv_index_t M = m + m2;
+        bcv_index_t N = n + n2;
+        bcv_index_t lwork = bcv_svd_decompose_work_len (holdin, M, N);
     
-        if (dgebrd_lwork > 0 
-            && dormbr_P_lwork > 0 
-            && dormbr_Q_lwork > 0 
-            && dbdsqr_lwork > 0)
+        if (lwork > 0)
         {
-            bcv_index_t lwork = MAX (MAX (dgebrd_lwork, dormbr_P_lwork),
-                                     MAX (dormbr_Q_lwork, dbdsqr_lwork));
             double e[mn];
             double tauq[mn];
             double taup[mn];
@@ -229,10 +222,9 @@ bcv_svd_decompose (bcv_svd_t *bcv)
                                 BCV_MATRIX_TRANS, bcv->x11, tauq, bcv->x12, 
                                 work, lwork);
 
-            /* we can now drop the extra rows and columns; they never enter 
+            /* we can now drop the extra rows or columns; they never enter
              * into the svd.
              */
-            uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
             bcv->x11->m = mn;
             bcv->x11->n = mn;
             bcv->x12->m = mn;
@@ -243,6 +235,7 @@ bcv_svd_decompose (bcv_svd_t *bcv)
              *        x12 := Q1^T x12
              */
             _bcv_matrix_set_identity (bcv->x11);
+            uplo   = (m >= n) ? BCV_MATRIX_UPPER : BCV_MATRIX_LOWER;
             result = _bcv_lapack_dbdsqr (uplo, mn, bcv->d, e, 
                                          bcv->x11, NULL, bcv->x12, work);
         }
@@ -252,6 +245,42 @@ bcv_svd_decompose (bcv_svd_t *bcv)
         }
     }
     
+    return result;
+}
+
+
+static bcv_index_t
+bcv_svd_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+{
+    bcv_index_t result = 0;
+    bcv_index_t m, n, mn, m2, n2;
+    bcv_index_t dgebrd_lwork, dormbr_P_lwork, dormbr_Q_lwork, dbdsqr_lwork;
+    _bcv_assert_valid_holdin (&holdin, M, N);
+
+    m  = holdin.m;
+    n  = holdin.n;
+    mn = MIN (m, n);
+    m2 = M - m;
+    n2 = N - n;
+
+    dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
+    dormbr_P_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P,
+                                                  BCV_MATRIX_RIGHT,
+                                                  m, n, m2, n);
+    dormbr_Q_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P,
+                                                  BCV_MATRIX_RIGHT,
+                                                  m, n, m, n2);
+    dbdsqr_lwork   = _bcv_lapack_dbdsqr_work_len (mn, BCV_FALSE);
+
+    if (dgebrd_lwork > 0
+        && dormbr_P_lwork > 0
+        && dormbr_Q_lwork > 0
+        && dbdsqr_lwork > 0)
+    {
+        result = MAX (MAX (dgebrd_lwork, dormbr_P_lwork),
+                      MAX (dormbr_Q_lwork, dbdsqr_lwork));
+    }
+
     return result;
 }
 
