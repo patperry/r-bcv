@@ -255,10 +255,10 @@ bcv_svd_decompose (bcv_svd_t *bcv)
     
         if (lwork > 0)
         {
-            double e[mn];
-            double tauq[mn];
-            double taup[mn];
-            double work[lwork];
+            double *e    = bcv->work; 
+            double *tauq = e + mn;
+            double *taup = tauq + mn;
+            double *work = taup + mn;
 
             /* decompose x11 := Q B P^T */ 
             _bcv_lapack_dgebrd (bcv->x11, bcv->d, e, tauq, taup, work, lwork);
