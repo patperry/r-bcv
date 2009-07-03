@@ -7,6 +7,7 @@
 #include <Rinternals.h>
 #include <Rdefines.h>
 #include <R_ext/Utils.h>
+#include "bcv-partition.h"
 #include "bcv-svd.h"
 #include "driver.h"
 
@@ -15,98 +16,38 @@
 
 typedef struct _perm_t
 {
-    int M, N, K, L, m, n;
-    int *s_r, *s_c;
+    bcv_partition_t *row_part;
+    bcv_partition_t *col_part;
+    int m, n;
     int *ir, *jc;
 } perm_t;
 
-void
-perm_debug (perm_t *perm)
-{
-    int i, j, M = perm->M, N = perm->N;
-    
-    REprintf ("perm_t {\n"
-              "    M   : %d\n"
-              "    N   : %d\n"
-              "    K   : %d\n"
-              "    L   : %d\n"
-              "    m   : %d\n"
-              "    n   : %d\n",
-              perm->M, perm->N, perm->K, perm->L, perm->m, perm->n);
-    
-    REprintf ("    s_r : { ");
-    for (i = 0; i < M; i++) REprintf ("%d ", perm->s_r[i]);
-    REprintf ("}\n");
-
-    REprintf ("    s_c : { ");
-    for (j = 0; j < N; j++) REprintf ("%d ", perm->s_c[j]);
-    REprintf ("}\n");
-
-    REprintf ("    ir  : { ");
-    for (i = 0; i < M; i++) REprintf ("%d ", perm->ir[i]);
-    REprintf ("}\n");
-
-    REprintf ("    jc  : { ");
-    for (j = 0; j < N; j++) REprintf ("%d ", perm->jc[j]);
-    REprintf ("}\n");
-    
-    REprintf ("}\n");
-}
 
 void 
 perm_init (perm_t *perm, int M, int N, int K, int L, int *s_r, int *s_c)
 {
-    perm->M = M;
-    perm->N = N;
-    perm->K = K;
-    perm->L = L;
+    perm->row_part = bcv_partition_alloc (M);
+    bcv_partition_init (perm->row_part, M, K, s_r);
     
-    perm->s_r = s_r;
-    perm->s_c = s_c;
+    perm->col_part = bcv_partition_alloc (N);
+    bcv_partition_init (perm->col_part, N, L, s_c);
+
     perm->ir  = (int *) R_alloc (M, sizeof (int));
     perm->jc  = (int *) R_alloc (N, sizeof (int));
 }
 
 void
+perm_deinit (perm_t *perm)
+{
+    bcv_partition_free (perm->row_part);
+    bcv_partition_free (perm->col_part);
+}
+
+void
 perm_select (perm_t *perm, int k, int l)
 {
-    int *ir, *jc, *s_r, *s_c;
-    int i, j, M, N;
-    int m = 0, n = 0, mc, nc;
-    
-    M   = perm->M;
-    N   = perm->N;
-    s_r = perm->s_r;
-    s_c = perm->s_c;
-    ir  = perm->ir;
-    jc  = perm->jc;
-    
-    mc = M;
-    for (i = 0; i < M; i++)
-    {
-        if (s_r[i] != k)
-            ir[i] = m++;
-        else
-            ir[i] = --mc;
-    }
-    for (i = 0; i < M; i++)
-        if (ir[i] >= m)
-            ir[i] = (M - 1) - (ir[i] - m);
-    
-    nc = N;
-    for (j = 0; j < N; j++)
-    {
-        if (s_c[j] != l)
-            jc[j] = n++;
-        else
-            jc[j] = --nc;
-    }
-    for (j = 0; j < N; j++)
-        if (jc[j] >= n)
-            jc[j] = (N - 1) - (jc[j] - n);
-    
-    perm->m = m;
-    perm->n = n;
+    perm->m = bcv_partition_get_perm (perm->row_part, k, perm->ir);
+    perm->n = bcv_partition_get_perm (perm->col_part, l, perm->jc);
 }
 
 
@@ -169,6 +110,7 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     }
 
     bcv_svd_free (bcv);
+    perm_deinit (&perm);
 
     PROTECT (dim = allocVector (INTSXP, 2));
     INTEGER (dim) [0] = (kmax + 1);
