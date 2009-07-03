@@ -60,6 +60,7 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 {
     double *x_data;
     bcv_index_t M, N, K, L, k, i, j, kmax;
+    void *bcv_mem;
     bcv_svd_t *bcv;
     bcv_holdin_t holdin;
     SEXP rss_R, dim;
@@ -83,9 +84,9 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
     rss = NUMERIC_POINTER (rss_R);
     bcv_holdin_t max_holdin = { M, N };
-    bcv = bcv_svd_alloc (max_holdin, M, N);
+    bcv_mem = bcv_svd_alloc (max_holdin, M, N);
     
-    if (!bcv)
+    if (!bcv_mem)
         error ("Could not allocate bcv_svd_t for size (%d,%d)", M, N);
 
     for (j = 0; j < L; j++)
@@ -101,7 +102,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             }
             holdin.m = perm.m;
             holdin.n = perm.n;
-            bcv_svd_initp (bcv, holdin, &x, perm.ir, perm.jc);
+            bcv = bcv_svd_init (bcv_mem, holdin, M, N);
+            bcv_svd_decompose_with_perm (bcv, &x, perm.ir, perm.jc);
             /* TODO: check for error return */
 
             *rss++ = bcv_svd_get_resid_rss (bcv);
@@ -113,7 +115,7 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
         }
     }
 
-    bcv_svd_free (bcv);
+    bcv_svd_free (bcv_mem);
     perm_deinit (&perm);
 
     PROTECT (dim = allocVector (INTSXP, 2));

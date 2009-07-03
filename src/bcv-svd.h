@@ -41,13 +41,12 @@ typedef struct _bcv_holdin {
  * @M: the number of rows in the matrix
  * @N: the number of columns in the matrix
  * 
- * Allocate a workspace for a BCV computation large enough to cross-validate 
- * a matrix with @M rows and @N columns.  The workspace should be 
- * freed with bcv_svd_free().
+ * Allocate memory for a BCV computation large enough to be used by
+ * bcv_svd_init().  The workspace should be freed with bcv_svd_free().
  *
  * This function is monotonic in all of its arguments.
  */
-bcv_svd_t *
+void *
 bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
 
 /**
@@ -63,42 +62,6 @@ bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
 size_t
 bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
 
-
-/** 
- * bcv_svd_init:
- * @bcv: the BCV workspace
- * @holdin: the dimensions of the hold-in matrix, which is assumed to be
- *   upper-left corner of the matrix
- * @x: a matrix to cross-validate
- *
- * Initialize the workspace for cross-validating the SVD of a matrix.
- * Returns zero on success and a positive number on failure to compute the
- * SVD of the held-in set.
- */
-bcv_error_t
-bcv_svd_init (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x);
-
-/**
- * bcv_svd_initp:
- * @bcv: the BCV workspace
- * @holdin: the dimensions of the hold-in matrix
- * @x: a matrix to cross-validate
- * @p: a row permutation
- * @q: a column permutation
- *
- * Initialize the workspace for cross-validating the SVD of a matrix after
- * optionally permuting the rows or columns of the matrix.  If either of
- * @p or @q is non-null, the matrix rows or columns get permuted.  
- * In this case that @p and @q are both non-null, @x[i,j] gets replaced by
- * @x[p[i], q[j]].
- *
- * Returns zero on success and a positive number on failure to compute the
- * SVD of the held-in set.
- */
-bcv_error_t
-bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
-               bcv_index_t *p, bcv_index_t *q);
-
 /**
  * bcv_svd_free:
  * @bcv: the BCV workspace
@@ -107,6 +70,55 @@ bcv_svd_initp (bcv_svd_t *bcv, bcv_holdin_t holdin, const bcv_matrix_t *x,
  */
 void 
 bcv_svd_free (bcv_svd_t *bcv);
+
+/**
+ * bcv_svd_init:
+ * @mem: unitialized memory for a #bcv_svd_t
+ * @holdin: the size of the held-in matrix.
+ * @M: the number of rows in the matrix
+ * @N: the number of columns in the matrix
+ *
+ * Cast @mem to point to a #bcv_svd_t and initialize the structure for
+ * a BCV computation with the given matrix and holdout dimensions.  The
+ * @mem array must have at least bcv_svd_size() bytes.  Return the
+ * type-cast pointer.
+ *
+ * This function does not allocate any memory.
+ */
+bcv_svd_t *
+bcv_svd_init (void *mem, bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N);
+
+/** 
+ * bcv_svd_decompose:
+ * @bcv: an initialized BCV workspace
+ * @x: a matrix to cross-validate
+ *
+ * Divide @x into blocks, copy it into the BCV workspace, and take the SVD of
+ * the held-in block.  Returns zero on success and a positive number on 
+ * failure to compute the SVD of the held-in block.
+ */
+bcv_error_t
+bcv_svd_decompose (bcv_svd_t *bcv, const bcv_matrix_t *x);
+
+/**
+ * bcv_svd_decompose_with_perm:
+ * @bcv: an initialized BCV workspace
+ * @x: a matrix to cross-validate
+ * @p: a row permutation
+ * @q: a column permutation
+ *
+ * Divide @x into blocks, copy it into the BCV workspace while
+ * optionally permuting the rows or columns of the copy.  If either of
+ * @p or @q is non-null, the matrix rows or columns get permuted.  
+ * In this case that @p and @q are both non-null, @x[i,j] gets replaced by
+ * @x[p[i], q[j]].  Finally, take the SVD of the held-in block.
+ *
+ * Returns zero on success and a positive number on failure to compute the
+ * SVD of the held-in block.
+ */
+bcv_error_t
+bcv_svd_decompose_with_perm (bcv_svd_t *bcv, const bcv_matrix_t *x,
+                             bcv_index_t *p, bcv_index_t *q);
 
 /**
  * bcv_svd_get_resid:
