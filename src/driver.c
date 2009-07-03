@@ -143,9 +143,9 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     if (!bcv)
         error ("Could not allocate bcv_svd_t for size (%d,%d)", M, N);
 
-    for (j = 1; j <= L; j++)
+    for (j = 0; j < L; j++)
     {
-        for (i = 1; i <= K; i++)
+        for (i = 0; i < K; i++)
         {
             R_CheckUserInterrupt ();
             
