@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include "bcv-partition.h"
@@ -24,20 +25,35 @@ struct _bcv_partition
 bcv_partition_t *
 bcv_partition_alloc (bcv_index_t n)
 {
-    bcv_partition_t *part;
+    bcv_partition_t *part = NULL;
+    void *work;
+    size_t size = bcv_partition_size (n);
     
-    if ((part = malloc (sizeof (bcv_partition_t)))) 
+    if (size > 0
+        && (work = malloc (size)))
     {
-        if (!(part->sets = malloc (n * sizeof (bcv_index_t))))
-        {
-            free (part);
-            part = NULL;
-        }
+        part       = work; work += sizeof (bcv_partition_t);
+        part->sets = work;
     }
     
     return part;
 }
 
+
+size_t
+bcv_partition_size (bcv_index_t n)
+{
+    size_t result = 0;
+
+    assert (n >= 0);
+    
+    if (n <= (SIZE_MAX - sizeof (bcv_partition_t)) / sizeof (bcv_index_t))
+    {
+        result = sizeof (bcv_partition_t) + n * sizeof (bcv_index_t);
+    }
+    
+    return result;
+}
 
 void
 bcv_partition_free (bcv_partition_t *part)

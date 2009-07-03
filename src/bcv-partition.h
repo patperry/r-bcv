@@ -2,6 +2,7 @@
 #ifndef _BCV_PARTITION_H
 #define _BCV_PARTITION_H
 
+#include <stdlib.h>
 #include "bcv-types.h"
 
 
@@ -9,6 +10,9 @@ typedef struct _bcv_partition bcv_partition_t;
 
 bcv_partition_t *
 bcv_partition_alloc (bcv_index_t n);
+
+size_t
+bcv_partition_size (bcv_index_t n);
 
 void
 bcv_partition_free (bcv_partition_t *part);
