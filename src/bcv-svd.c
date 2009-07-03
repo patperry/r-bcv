@@ -40,7 +40,7 @@ bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
     mn = MIN (m,n);
     
     /* space for the bcv_svd_t and x11, x12, x21, x22 */
-    if (sizeof (bcv_matrix_t) <= SIZE_MAX - sizeof (bcv_svd_t) / 4) 
+    if (sizeof (bcv_matrix_t) <= (SIZE_MAX - sizeof (bcv_svd_t)) / 4) 
     {
         total = sizeof (bcv_matrix_t) + 4 * sizeof (bcv_svd_t);
         
