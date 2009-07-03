@@ -2,13 +2,13 @@
 #include <assert.h>
 #include <stdint.h>
 #include <strings.h>
-#include "bcv-svd.h"
+#include "bcv-svd-gabriel-rep.h"
 #include "bcv-matrix-private.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
-struct _bcv_svd
+struct _bcv_svd_grep
 {
     bcv_matrix_t *x11; bcv_matrix_t *x12;
     bcv_matrix_t *x21; bcv_matrix_t *x22;
@@ -17,29 +17,29 @@ struct _bcv_svd
 };
 
 static bcv_error_t
-bcv_svd_do_decompose (bcv_svd_t *bcv);
+bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv);
 
 static bcv_index_t
-bcv_svd_do_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, 
+bcv_svd_grep_do_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
                                bcv_index_t N);
 
 
 size_t
-bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
     size_t total, decompose_e_tauq_taup, update_u, work_len, result = 0;
     bcv_index_t m, n, mn;
     bcv_index_t decompose_lwork;
     
-    _bcv_assert_valid_holdin (&holdin, M, N);
+    _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     m  = holdin.m;
     n  = holdin.n;
     mn = MIN (m,n);
     
-    /* space for the bcv_svd_t and x11, x12, x21, x22 */
-    if (sizeof (bcv_matrix_t) <= (SIZE_MAX - sizeof (bcv_svd_t)) / 4) 
+    /* space for the bcv_svd_grep_t and x11, x12, x21, x22 */
+    if (sizeof (bcv_matrix_t) <= (SIZE_MAX - sizeof (bcv_svd_grep_t)) / 4) 
     {
-        total = sizeof (bcv_matrix_t) + 4 * sizeof (bcv_svd_t);
+        total = sizeof (bcv_matrix_t) + 4 * sizeof (bcv_svd_grep_t);
         
         /* space for the M*N data matrix */
         if (M + 1 <= SIZE_MAX / sizeof (double) / N
@@ -56,7 +56,7 @@ bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
                  * re-used by update()  
                  */
                 decompose_e_tauq_taup = 3 * mn * sizeof (double);
-                decompose_lwork = bcv_svd_do_decompose_work_len (holdin, M, N);
+                decompose_lwork = bcv_svd_grep_do_decompose_work_len (holdin, M, N);
                 update_u  = M * sizeof (double);
                 
                 if (mn <= SIZE_MAX / sizeof (double) / 3
@@ -84,16 +84,16 @@ bcv_svd_size (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 
 
 void *
-bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+bcv_svd_grep_alloc (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
     void *mem = NULL;
     size_t size;
     
     assert (M >= 0);
     assert (N >= 0);
-    _bcv_assert_valid_holdin (&holdin, M, N);
+    _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
-    size = bcv_svd_size (holdin, M, N);
+    size = bcv_svd_grep_size (holdin, M, N);
     
     if (size > 0)
     {
@@ -105,25 +105,25 @@ bcv_svd_alloc (bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 
 
 void 
-bcv_svd_free (bcv_svd_t *bcv)
+bcv_svd_grep_free (bcv_svd_grep_t *bcv)
 {
     if (bcv)
         free (bcv);
 }
 
 
-bcv_svd_t *
-bcv_svd_init (void *mem, bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+bcv_svd_grep_t *
+bcv_svd_grep_init (void *mem, bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
-    bcv_svd_t *bcv = NULL;
+    bcv_svd_grep_t *bcv = NULL;
     bcv_index_t m  = holdin.m;
     bcv_index_t n  = holdin.n;
     bcv_index_t mn = MIN (m,n);
     
     assert (mem);
-    _bcv_assert_valid_holdin (&holdin, M, N);
+    _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
-    bcv            = mem; mem += sizeof (bcv_svd_t);
+    bcv            = mem; mem += sizeof (bcv_svd_grep_t);
     bcv->x11       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x21       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x12       = mem; mem += sizeof (bcv_matrix_t);
@@ -156,14 +156,14 @@ bcv_svd_init (void *mem, bcv_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 
 
 bcv_error_t
-bcv_svd_decompose (bcv_svd_t *bcv, const bcv_matrix_t *x)
+bcv_svd_grep_decompose (bcv_svd_grep_t *bcv, const bcv_matrix_t *x)
 {
-    return bcv_svd_decompose_with_perm (bcv, x, NULL, NULL);
+    return bcv_svd_grep_decompose_with_perm (bcv, x, NULL, NULL);
 }
 
 
 bcv_error_t
-bcv_svd_decompose_with_perm (bcv_svd_t *bcv, const bcv_matrix_t *x,
+bcv_svd_grep_decompose_with_perm (bcv_svd_grep_t *bcv, const bcv_matrix_t *x,
                              bcv_index_t *p, bcv_index_t *q)
 {
     assert (bcv);
@@ -176,14 +176,14 @@ bcv_svd_decompose_with_perm (bcv_svd_t *bcv, const bcv_matrix_t *x,
     
     _bcv_matrix_permute_copy (&dst, x, p, q);
     
-    result = bcv_svd_do_decompose (bcv);
+    result = bcv_svd_grep_do_decompose (bcv);
     
     return result;
 }
 
 
 void 
-bcv_svd_get_resid (const bcv_svd_t *bcv, bcv_matrix_t *resid)
+bcv_svd_grep_get_resid (const bcv_svd_grep_t *bcv, bcv_matrix_t *resid)
 {
     assert (bcv);
     assert (resid);
@@ -196,7 +196,7 @@ bcv_svd_get_resid (const bcv_svd_t *bcv, bcv_matrix_t *resid)
 
 
 bcv_index_t 
-bcv_svd_get_max_rank (bcv_svd_t *bcv)
+bcv_svd_grep_get_max_rank (bcv_svd_grep_t *bcv)
 {
     assert (bcv);
     return MIN (bcv->x11->m, bcv->x11->n);
@@ -204,7 +204,7 @@ bcv_svd_get_max_rank (bcv_svd_t *bcv)
 
 
 double 
-bcv_svd_get_resid_rss (const bcv_svd_t *bcv)
+bcv_svd_grep_get_resid_rss (const bcv_svd_grep_t *bcv)
 {
     double frob;
     double mse;
@@ -226,7 +226,7 @@ bcv_svd_get_resid_rss (const bcv_svd_t *bcv)
  *           work := D
  */
 static bcv_error_t
-bcv_svd_do_decompose (bcv_svd_t *bcv)
+bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv)
 {
     bcv_error_t result = 0; 
     bcv_index_t m, n, mn, m2, n2;
@@ -246,10 +246,10 @@ bcv_svd_do_decompose (bcv_svd_t *bcv)
 
     if (mn > 0 && m2 > 0 && n2 > 0)
     {
-        bcv_holdin_t holdin = { m, n };
+        bcv_gabriel_holdin_t holdin = { m, n };
         bcv_index_t M = m + m2;
         bcv_index_t N = n + n2;
-        bcv_index_t lwork = bcv_svd_do_decompose_work_len (holdin, M, N);
+        bcv_index_t lwork = bcv_svd_grep_do_decompose_work_len (holdin, M, N);
     
         if (lwork > 0)
         {
@@ -299,13 +299,13 @@ bcv_svd_do_decompose (bcv_svd_t *bcv)
 
 
 static bcv_index_t
-bcv_svd_do_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M, 
+bcv_svd_grep_do_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
                                bcv_index_t N)
 {
     bcv_index_t result = 0;
     bcv_index_t m, n, mn;
     bcv_index_t dgebrd_lwork, dormbr_P_lwork, dormbr_Q_lwork, dbdsqr_lwork;
-    _bcv_assert_valid_holdin (&holdin, M, N);
+    _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
     m  = holdin.m;
     n  = holdin.n;
@@ -314,7 +314,7 @@ bcv_svd_do_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M,
     /* We could be more precise below, replacing M with M - m and
      * N with N - n in the calls to _dormbr_work_len.  We prefer to
      * use the conservative values instead so that 
-     * bcv_svd_do_decompose_work_len() is monotonic in the holdin size. */
+     * bcv_svd_grep_do_decompose_work_len() is monotonic in the holdin size. */
     dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
     dormbr_P_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, 
                                                   BCV_MATRIX_RIGHT, 
@@ -342,10 +342,10 @@ bcv_svd_do_decompose_work_len (bcv_holdin_t holdin, bcv_index_t M,
  *         x22 := x22 - (scale/d[i]) * u[i] * v[i]^T
  */
 void
-bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
+bcv_svd_grep_update_resid (bcv_svd_grep_t *bcv, double scale, bcv_index_t i)
 {
     assert (bcv);
-    assert (0 <= i && i < bcv_svd_get_max_rank (bcv));
+    assert (0 <= i && i < bcv_svd_grep_get_max_rank (bcv));
 
     double alpha = -scale / bcv->d[i];
     
@@ -357,7 +357,7 @@ bcv_svd_update_resid (bcv_svd_t *bcv, double scale, bcv_index_t i)
     /* x21 stores x21 P
      * Set u := x21 P u = x21 P P1 ei
      *
-     * In bcv_svd_size, we have been careful to make sure that the extra work
+     * In bcv_svd_grep_size, we have been careful to make sure that the extra work
      * space has room for at least M doubles.
      */
     bcv_index_t m2 = bcv->x21->m;

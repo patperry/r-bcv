@@ -8,7 +8,7 @@
 #include <Rdefines.h>
 #include <R_ext/Utils.h>
 #include "bcv-partition.h"
-#include "bcv-svd.h"
+#include "bcv-svd-gabriel-rep.h"
 #include "driver.h"
 
 #define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -61,8 +61,8 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     double *x_data;
     bcv_index_t M, N, K, L, k, i, j, kmax;
     void *bcv_mem;
-    bcv_svd_t *bcv;
-    bcv_holdin_t holdin;
+    bcv_svd_grep_t *bcv;
+    bcv_gabriel_holdin_t holdin;
     SEXP rss_R, dim;
     double *rss;
     perm_t perm;
@@ -83,11 +83,11 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     
     PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
     rss = NUMERIC_POINTER (rss_R);
-    bcv_holdin_t max_holdin = { M, N };
-    bcv_mem = bcv_svd_alloc (max_holdin, M, N);
+    bcv_gabriel_holdin_t max_holdin = { M, N };
+    bcv_mem = bcv_svd_grep_alloc (max_holdin, M, N);
     
     if (!bcv_mem)
-        error ("Could not allocate bcv_svd_t for size (%d,%d)", M, N);
+        error ("Could not allocate bcv_svd_grep_t for size (%d,%d)", M, N);
 
     for (j = 0; j < L; j++)
     {
@@ -102,20 +102,20 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             }
             holdin.m = perm.m;
             holdin.n = perm.n;
-            bcv = bcv_svd_init (bcv_mem, holdin, M, N);
-            bcv_svd_decompose_with_perm (bcv, &x, perm.ir, perm.jc);
+            bcv = bcv_svd_grep_init (bcv_mem, holdin, M, N);
+            bcv_svd_grep_decompose_with_perm (bcv, &x, perm.ir, perm.jc);
             /* TODO: check for error return */
 
-            *rss++ = bcv_svd_get_resid_rss (bcv);
+            *rss++ = bcv_svd_grep_get_resid_rss (bcv);
             for (k = 0; k < kmax; k++)
             {
-                bcv_svd_update_resid (bcv, 1.0, k);
-                *rss++ = bcv_svd_get_resid_rss (bcv);            
+                bcv_svd_grep_update_resid (bcv, 1.0, k);
+                *rss++ = bcv_svd_grep_get_resid_rss (bcv);            
             }
         }
     }
 
-    bcv_svd_free (bcv_mem);
+    bcv_svd_grep_free (bcv_mem);
     perm_deinit (&perm);
 
     PROTECT (dim = allocVector (INTSXP, 2));
