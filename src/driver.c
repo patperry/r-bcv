@@ -26,14 +26,15 @@ typedef struct _perm_t
 void 
 perm_init (perm_t *perm, int M, int N, int K, int L, int *s_r, int *s_c)
 {
-    perm->row_part = bcv_partition_alloc (M, K);
-    perm->col_part = bcv_partition_alloc (N, L);
-    if (!perm->row_part || !perm->col_part) 
+    void *row_part_mem = bcv_partition_alloc (M, K);
+    void *col_part_mem = bcv_partition_alloc (N, L);
+    
+    if (!row_part_mem || !col_part_mem) 
         error ("Could not allocate enough memory to BCV"
                " an %d-by-%d matrix.", M, N);
 
-    bcv_partition_init (perm->row_part, M, K, s_r);
-    bcv_partition_init (perm->col_part, N, L, s_c);
+    perm->row_part = bcv_partition_init (row_part_mem, M, K, s_r);
+    perm->col_part = bcv_partition_init (col_part_mem, N, L, s_c);
 
     perm->ir  = (int *) R_alloc (M, sizeof (int));
     perm->jc  = (int *) R_alloc (N, sizeof (int));

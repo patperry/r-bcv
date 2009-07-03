@@ -18,11 +18,11 @@ typedef struct _bcv_partition bcv_partition_t;
  * @n: the number of elements
  * @k: the number of sets in the partition
  *
- * Allocate a #bcv_partition_t large enough to hold a partition of @n
- * integers into @k sets.  The object should be freed with 
+ * Allocate space large enough to hold a partition of @n
+ * integers into @k sets.  The memory should be freed with 
  * bcv_partition_free().
  */
-bcv_partition_t *
+void *
 bcv_partition_alloc (bcv_index_t n, bcv_index_t k);
 
 /**
@@ -47,16 +47,21 @@ bcv_partition_free (bcv_partition_t *part);
 
 /**
  * bcv_partition_init:
- * @part: an uninitialized partition
+ * @mem: uninitialized memory
  * @n: the number of elements
  * @k: the number of sets in the partition
  * @sets: an array of length @n indicating which partition set the elements
  *     [0..n) belong to.
  *
- * Initialize a #bcv_partition_t with the given parameters.
+ * Cast the @mem array to a #bcv_partition_t and initialize
+ * the resulting #bcv_partition_t with the given parameters.  The @mem
+ * array must have at least bcv_partition_size(n,k) bytes.  Return
+ * the @mem argument.  
+ * 
+ * This function does not allocate any memory.
  */
-void 
-bcv_partition_init (bcv_partition_t *part, bcv_index_t n, bcv_index_t k, 
+bcv_partition_t *
+bcv_partition_init (void *mem, bcv_index_t n, bcv_index_t k, 
                     const bcv_index_t *sets);
 
 /**
