@@ -22,10 +22,10 @@ struct _bcv_partition
 };
 
 
-void *
+bcv_partition_t *
 bcv_partition_alloc (bcv_index_t n, bcv_index_t k)
 {
-    void *result = NULL;
+    bcv_partition_t *result = NULL;
     size_t size = bcv_partition_size (n, k);
     
     if (size > 0)
@@ -58,24 +58,21 @@ bcv_partition_free (bcv_partition_t *part)
 }
 
 
-bcv_partition_t *
-bcv_partition_init (void *mem, bcv_index_t n, bcv_index_t k, 
+void
+bcv_partition_init (bcv_partition_t *part, bcv_index_t n, bcv_index_t k, 
                     const bcv_index_t *sets)
 {
-    bcv_partition_t *part;
+    void *mem = part; mem += sizeof (bcv_partition_t);
     
     assert (mem);
     assert (n >= 0);
     assert (k >= 0);
     assert (sets || n == 0);
     
-    part       = mem; mem += sizeof (bcv_partition_t);
     part->n    = n;
     part->k    = k;
     part->sets = mem;
     memcpy (part->sets, sets, n * sizeof (bcv_index_t));
-    
-    return part;
 }
 
 
