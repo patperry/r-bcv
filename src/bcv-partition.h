@@ -16,25 +16,23 @@ typedef struct _bcv_partition bcv_partition_t;
 /**
  * bcv_partition_alloc:
  * @n: the number of elements
- * @k: the number of sets in the partition
  *
  * Allocate space large enough to hold a partition of @n
- * integers into @k sets.  The memory should be freed with 
+ * integers into k sets.  The memory should be freed with 
  * bcv_partition_free().
  */
 bcv_partition_t *
-bcv_partition_alloc (bcv_index_t n, bcv_index_t k);
+bcv_partition_alloc (bcv_index_t n);
 
 /**
  * bcv_partition_size:
  * @n: the number of elements
- * @k: the number of sets in the partition
  *
  * Return the number of bytes needed to store a #bcv_partition_t of @n
- * integers into @k sets.
+ * integers into k sets.
  */
 size_t
-bcv_partition_size (bcv_index_t n, bcv_index_t k);
+bcv_partition_size (bcv_index_t n);
 
 /**
  * bcv_partition_free:

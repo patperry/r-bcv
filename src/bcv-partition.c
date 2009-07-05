@@ -23,10 +23,10 @@ struct _bcv_partition
 
 
 bcv_partition_t *
-bcv_partition_alloc (bcv_index_t n, bcv_index_t k)
+bcv_partition_alloc (bcv_index_t n)
 {
     bcv_partition_t *result = NULL;
-    size_t size = bcv_partition_size (n, k);
+    size_t size = bcv_partition_size (n);
     
     if (size > 0)
         result = malloc (size);
@@ -36,7 +36,7 @@ bcv_partition_alloc (bcv_index_t n, bcv_index_t k)
 
 
 size_t
-bcv_partition_size (bcv_index_t n, bcv_index_t k)
+bcv_partition_size (bcv_index_t n)
 {
     size_t result = 0;
 
