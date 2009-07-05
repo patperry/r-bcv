@@ -46,7 +46,7 @@ typedef struct _bcv_gabriel_holdin {
  *
  * This function is monotonic in all of its arguments.
  */
-void *
+bcv_svd_grep_t *
 bcv_svd_grep_alloc (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N);
 
 /**
@@ -73,52 +73,46 @@ bcv_svd_grep_free (bcv_svd_grep_t *bcv);
 
 /**
  * bcv_svd_grep_init:
- * @mem: unitialized memory for a #bcv_svd_grep_t
- * @holdin: the size of the held-in matrix.
- * @M: the number of rows in the matrix
- * @N: the number of columns in the matrix
- *
- * Cast @mem to point to a #bcv_svd_grep_t and initialize the structure for
- * a BCV computation with the given matrix and holdout dimensions.  The
- * @mem array must have at least bcv_svd_grep_size() bytes.  Return the
- * type-cast pointer.
- *
- * This function does not allocate any memory.
- */
-bcv_svd_grep_t *
-bcv_svd_grep_init (void *mem, bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N);
-
-/** 
- * bcv_svd_grep_decompose:
- * @bcv: an initialized BCV workspace
+ * @bcv: unitialized memory for a #bcv_svd_grep_t
+ * @holdin: the size of the held-in matrix
  * @x: a matrix to cross-validate
  *
- * Divide @x into blocks, copy it into the BCV workspace, and take the SVD of
- * the held-in block.  Returns zero on success and a positive number on 
- * failure to compute the SVD of the held-in block.
+ * Initialize the @bcv structure for a BCV computation with the given holdin
+ * dimensions.  Divide @x into blocks, copy it into the BCV workspace, and
+ * take the SVD of the held-in block.  Return zero on success and a positive
+ * number on failure to compute the SVD of the held-in block.
+ *
+ * The @bcv pointer must point to at  least bcv_svd_grep_size() free bytes.  
+ * This function does not allocate any memory.
  */
 bcv_error_t
-bcv_svd_grep_decompose (bcv_svd_grep_t *bcv, const bcv_matrix_t *x);
+bcv_svd_grep_init (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin, 
+                   const bcv_matrix_t *x);
 
 /**
- * bcv_svd_grep_decompose_with_perm:
- * @bcv: an initialized BCV workspace
+ * bcv_svd_grep_init_with_perm:
+ * @bcv: uninitialized memory for a #bcv_svd_grep_t
+ * @holdin: the size of the held-in matrix
  * @x: a matrix to cross-validate
  * @p: a row permutation
  * @q: a column permutation
  *
- * Divide @x into blocks, copy it into the BCV workspace while
+ * Initialize the @bcv structure for a BCV computation with the given holdin
+ * dimensions.  Divide @x into blocks, copy it into the BCV workspace while
  * optionally permuting the rows or columns of the copy.  If either of
  * @p or @q is non-null, the matrix rows or columns get permuted.  
  * In this case that @p and @q are both non-null, @x[i,j] gets replaced by
- * @x[p[i], q[j]].  Finally, take the SVD of the held-in block.
+ * @x[p[i], q[j]].  Finally, take the SVD of the held-in block.  Return zero 
+ * on success and a positive number on failure to compute the SVD of the 
+ * held-in block.
  *
- * Returns zero on success and a positive number on failure to compute the
- * SVD of the held-in block.
+ * The @bcv pointer must point to at  least bcv_svd_grep_size() free bytes.  
+ * This function does not allocate any memory.
  */
 bcv_error_t
-bcv_svd_grep_decompose_with_perm (bcv_svd_grep_t *bcv, const bcv_matrix_t *x,
-                             bcv_index_t *p, bcv_index_t *q);
+bcv_svd_grep_init_with_perm (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
+                             const bcv_matrix_t *x, bcv_index_t *p,
+                             bcv_index_t *q);
 
 /**
  * bcv_svd_grep_get_resid:

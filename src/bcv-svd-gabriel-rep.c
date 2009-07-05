@@ -16,12 +16,17 @@ struct _bcv_svd_grep
     void *work;
 };
 
+
+static void
+bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin, 
+                           bcv_index_t M, bcv_index_t N);
+
 static bcv_error_t
-bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv);
+bcv_svd_grep_decompose (bcv_svd_grep_t *bcv);
 
 static bcv_index_t
-bcv_svd_grep_do_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
-                               bcv_index_t N);
+bcv_svd_grep_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
+                                 bcv_index_t N);
 
 
 size_t
@@ -56,7 +61,7 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
                  * re-used by update()  
                  */
                 decompose_e_tauq_taup = 3 * mn * sizeof (double);
-                decompose_lwork = bcv_svd_grep_do_decompose_work_len (holdin, M, N);
+                decompose_lwork = bcv_svd_grep_decompose_work_len (holdin, M, N);
                 update_u  = M * sizeof (double);
                 
                 if (mn <= SIZE_MAX / sizeof (double) / 3
@@ -83,10 +88,10 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 }
 
 
-void *
+bcv_svd_grep_t *
 bcv_svd_grep_alloc (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 {
-    void *mem = NULL;
+    bcv_svd_grep_t *result = NULL;
     size_t size;
     
     assert (M >= 0);
@@ -97,10 +102,10 @@ bcv_svd_grep_alloc (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
     
     if (size > 0)
     {
-        mem = malloc (size);
+        result = malloc (size);
     }
 
-    return mem;
+    return result;
 }
 
 
@@ -112,18 +117,19 @@ bcv_svd_grep_free (bcv_svd_grep_t *bcv)
 }
 
 
-bcv_svd_grep_t *
-bcv_svd_grep_init (void *mem, bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
+void
+bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin, 
+                           bcv_index_t M, bcv_index_t N)
 {
-    bcv_svd_grep_t *bcv = NULL;
     bcv_index_t m  = holdin.m;
     bcv_index_t n  = holdin.n;
     bcv_index_t mn = MIN (m,n);
+    void *mem;
     
-    assert (mem);
+    assert (bcv);
     _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
-    bcv            = mem; mem += sizeof (bcv_svd_grep_t);
+    mem            = bcv; mem += sizeof (bcv_svd_grep_t);
     bcv->x11       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x21       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x12       = mem; mem += sizeof (bcv_matrix_t);
@@ -150,21 +156,21 @@ bcv_svd_grep_init (void *mem, bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_in
     bcv->x22->n    = N - n;
     bcv->x22->data = bcv->x11->data + m + n * M;
     bcv->x22->lda  = M;
-    
-    return bcv;
 }
 
 
 bcv_error_t
-bcv_svd_grep_decompose (bcv_svd_grep_t *bcv, const bcv_matrix_t *x)
+bcv_svd_grep_init (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
+                   const bcv_matrix_t *x)
 {
-    return bcv_svd_grep_decompose_with_perm (bcv, x, NULL, NULL);
+    return bcv_svd_grep_init_with_perm (bcv, holdin, x, NULL, NULL);
 }
 
 
 bcv_error_t
-bcv_svd_grep_decompose_with_perm (bcv_svd_grep_t *bcv, const bcv_matrix_t *x,
-                             bcv_index_t *p, bcv_index_t *q)
+bcv_svd_grep_init_with_perm (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
+                             const bcv_matrix_t *x, bcv_index_t *p, 
+                             bcv_index_t *q)
 {
     assert (bcv);
     _bcv_assert_valid_matrix (x);
@@ -172,11 +178,13 @@ bcv_svd_grep_decompose_with_perm (bcv_svd_grep_t *bcv, const bcv_matrix_t *x,
     bcv_error_t result = 0;
     bcv_index_t M = x->m;
     bcv_index_t N = x->n;
-    bcv_matrix_t dst = { M, N, bcv->x11->data, M };
     
+    bcv_svd_grep_init_storage (bcv, holdin, M, N);
+
+    bcv_matrix_t dst = { M, N, bcv->x11->data, M };
     _bcv_matrix_permute_copy (&dst, x, p, q);
     
-    result = bcv_svd_grep_do_decompose (bcv);
+    result = bcv_svd_grep_decompose (bcv);
     
     return result;
 }
@@ -226,7 +234,7 @@ bcv_svd_grep_get_resid_rss (const bcv_svd_grep_t *bcv)
  *           work := D
  */
 static bcv_error_t
-bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv)
+bcv_svd_grep_decompose (bcv_svd_grep_t *bcv)
 {
     bcv_error_t result = 0; 
     bcv_index_t m, n, mn, m2, n2;
@@ -249,7 +257,7 @@ bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv)
         bcv_gabriel_holdin_t holdin = { m, n };
         bcv_index_t M = m + m2;
         bcv_index_t N = n + n2;
-        bcv_index_t lwork = bcv_svd_grep_do_decompose_work_len (holdin, M, N);
+        bcv_index_t lwork = bcv_svd_grep_decompose_work_len (holdin, M, N);
     
         if (lwork > 0)
         {
@@ -299,7 +307,7 @@ bcv_svd_grep_do_decompose (bcv_svd_grep_t *bcv)
 
 
 static bcv_index_t
-bcv_svd_grep_do_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
+bcv_svd_grep_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M, 
                                bcv_index_t N)
 {
     bcv_index_t result = 0;
@@ -314,7 +322,7 @@ bcv_svd_grep_do_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M,
     /* We could be more precise below, replacing M with M - m and
      * N with N - n in the calls to _dormbr_work_len.  We prefer to
      * use the conservative values instead so that 
-     * bcv_svd_grep_do_decompose_work_len() is monotonic in the holdin size. */
+     * bcv_svd_grep_decompose_work_len() is monotonic in the holdin size. */
     dgebrd_lwork   = _bcv_lapack_dgebrd_work_len (m, n);
     dormbr_P_lwork = _bcv_lapack_dormbr_work_len (BCV_MATRIX_VECT_P, 
                                                   BCV_MATRIX_RIGHT, 
