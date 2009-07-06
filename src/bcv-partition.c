@@ -6,8 +6,6 @@
 #include "bcv-partition.h"
 
 
-
-
 bcv_partition_t *
 bcv_partition_alloc (bcv_index_t n)
 {
@@ -35,6 +33,14 @@ bcv_partition_size (bcv_index_t n)
     
     return result;
 }
+
+
+size_t
+bcv_partition_align ()
+{
+    return __alignof__ (bcv_partition_t);
+}
+
 
 void
 bcv_partition_free (bcv_partition_t *part)
