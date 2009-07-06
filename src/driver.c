@@ -43,12 +43,13 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     bcv_partition_t col_part = { N, L, INTEGER_POINTER (s_c) };
     bcv_gabriel_holdin_t max_holdin = { M, N };
     
-    bcv_svd_gabriel_t *bcv = bcv_svd_gabriel_alloc (max_holdin, M, N);
+    size_t bcv_size = bcv_svd_gabriel_size (max_holdin, M, N);
     
-    if (!bcv)
-        error ("Could not allocate enough memory for Gabriel "
+    if (!bcv_size)
+        error ("could not allocate enough memory for Gabriel "
                " cross-validation of a %d-by-%d matrix", M, N);
 
+    bcv_svd_gabriel_t *bcv = (void *) R_alloc (bcv_size, 1);
     bcv_svd_gabriel_init (bcv, &x, &row_part, &col_part);
 
     for (j = 0; j < L; j++)
@@ -59,14 +60,12 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
             bcv_error = bcv_svd_gabriel_get_rss (bcv, i, j, rss, kmax);
             
             if (bcv_error)
-                error ("The SVD algorithm did not converge for the (%d,%d)"
+                error ("the SVD algorithm did not converge for the (%d,%d)"
                        " holdin", i, j);
             
             rss += kmax + 1;
         }
     }
-
-    bcv_svd_gabriel_free (bcv);
 
     PROTECT (dim = allocVector (INTSXP, 2));
     INTEGER (dim) [0] = (kmax + 1);
