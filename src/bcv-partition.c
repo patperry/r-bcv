@@ -5,21 +5,7 @@
 #include <string.h>
 #include "bcv-partition.h"
 
-/* a _bcv_partition represents a partition of the integers
- * [0..n) into k sets. */
-struct _bcv_partition
-{
-    /* the total number of elements in the partitions */
-    bcv_index_t n;
-    
-    /* the number of sets in the partition */
-    bcv_index_t k;
 
-    /* an array of length n; 
-     * sets[i], in the range [0..k), indicates which set
-     * i belongs to. */
-    bcv_index_t *sets; 
-};
 
 
 bcv_partition_t *

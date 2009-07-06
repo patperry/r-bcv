@@ -11,7 +11,19 @@
  * A #bcv_partition_t stores a partition of the integers [0..n) into
  * k different sets.
  */
-typedef struct _bcv_partition bcv_partition_t;
+typedef struct _bcv_partition
+{
+    /* the total number of elements in the partitions */
+    bcv_index_t n;
+    
+    /* the number of sets in the partition */
+    bcv_index_t k;
+
+    /* an array of length n; 
+     * sets[i], in the range [0..k), indicates which set
+     * i belongs to. */
+    bcv_index_t *sets; 
+} bcv_partition_t;
 
 /**
  * bcv_partition_alloc:
