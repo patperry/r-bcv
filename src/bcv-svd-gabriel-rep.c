@@ -212,7 +212,7 @@ bcv_svd_grep_get_max_rank (bcv_svd_grep_t *bcv)
 
 
 double 
-bcv_svd_grep_get_resid_rss (const bcv_svd_grep_t *bcv)
+bcv_svd_grep_get_rss (const bcv_svd_grep_t *bcv)
 {
     double frob;
     double mse;

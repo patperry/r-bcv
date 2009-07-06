@@ -9,13 +9,14 @@
 /** 
  * bcv_svd_grep_t:
  *  
- * A #bcv_svd_grep_t is a workspace for a perfoming a Gabrial-style SVD
- * cross-validation.
+ * A #bcv_svd_grep_t is a workspace for a perfoming a single replicate of a 
+ * Gabrial-style SVD cross-validation.
  *
- * After being initiliazed with either bcv_svd_grep_init() or bcv_svd_grep_initp(), 
- * this structure maintains the current residual estimate of the held-out 
- * block along with the estimated factors.  The residuals can we updated with
- * bcv_svd_update() and queried with bcv_svd_get_rss().
+ * After being initiliazed with either bcv_svd_grep_init() or 
+ * bcv_svd_grep_init_with_perm(), this structure maintains the current
+ * residual estimate of the held-out block along with the estimated factors. 
+ * The residuals can we updated with bcv_svd_grep_update_resid() and queried
+ * with bcv_svd_grep_get_rss().
  */
 typedef struct _bcv_svd_grep bcv_svd_grep_t;
 
@@ -116,7 +117,7 @@ bcv_svd_grep_get_resid (const bcv_svd_grep_t *bcv, bcv_matrix_t *resid);
  * Get the sum of squares of the elements in the residual matrix.
  */
 double 
-bcv_svd_grep_get_resid_rss (const bcv_svd_grep_t *bcv);
+bcv_svd_grep_get_rss (const bcv_svd_grep_t *bcv);
 
 /**
  * bcv_svd_grep_get_max_rank:

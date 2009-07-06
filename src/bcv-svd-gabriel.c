@@ -79,7 +79,7 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     
     error  = bcv_svd_grep_init_with_perm (bcv->rep, holdin, bcv->x,
                                           bcv->row_perm, bcv->col_perm);
-    *rss++ = bcv_svd_grep_get_resid_rss (bcv->rep);
+    *rss++ = bcv_svd_grep_get_rss (bcv->rep);
     
     if (!error)
     {
@@ -89,7 +89,7 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
         for (rank = 0; rank < max_rank; rank++)
         {
             bcv_svd_grep_update_resid (bcv->rep, 1.0, rank);
-            *rss++ = bcv_svd_grep_get_resid_rss (bcv->rep);            
+            *rss++ = bcv_svd_grep_get_rss (bcv->rep);            
         }
     }
     

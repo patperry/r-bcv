@@ -5,6 +5,7 @@
 #include "bcv-partition.h"
 #include "bcv-types.h"
 
+
 typedef struct _bcv_svd_gabriel bcv_svd_gabriel_t;
 
 /**
