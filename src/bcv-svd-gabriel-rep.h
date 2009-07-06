@@ -3,6 +3,7 @@
 #define _BCV_SVD_GABRIEL_REP_H
 
 #include <stdlib.h>
+#include "bcv-svd-gabriel.h"
 #include "bcv-types.h"
 
 /** 
@@ -17,23 +18,6 @@
  * bcv_svd_update() and queried with bcv_svd_get_rss().
  */
 typedef struct _bcv_svd_grep bcv_svd_grep_t;
-
-/**
- * bcv_gabriel_holdin_t:
- * @m: the number of rows in the held-in set.
- * @n: the number of columns on the held-in set.
- *
- * A #bcv_gabriel_holdin_t specifies the dimensions of the held-in matrix.
- */
-typedef struct _bcv_gabriel_holdin {
-    bcv_index_t m;
-    bcv_index_t n;
-} bcv_gabriel_holdin_t;
-
-#define _bcv_assert_valid_gabriel_holdin(x,M,N) \
-    assert (x); \
-    assert (0 <= (x)->m && (x)->m <= (M)); \
-    assert (0 <= (x)->n && (x)->n <= (N));
 
 /** 
  * bcv_svd_grep_alloc:
