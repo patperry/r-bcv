@@ -4,6 +4,24 @@
 
 #include <limits.h>
 
+/** 
+ * BCV_MIN:
+ * @a: the first value
+ * @b: the second value
+ *
+ * Return the minimum of @a and @b.
+ */
+#define BCV_MIN(a,b) ((a) < (b) ? (a) : (b))
+
+/** 
+ * BCV_MAX:
+ * @a: the first value
+ * @b: the second value
+ *
+ * Return the maximum of @a and @b.
+ */
+#define BCV_MAX(a,b) ((a) > (b) ? (a) : (b))
+
 /**
  * bcv_bool_t:
  *

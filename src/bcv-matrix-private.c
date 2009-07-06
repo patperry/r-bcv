@@ -8,11 +8,7 @@
     #include <string.h> /* for memset */
 #endif
 
-// #include <R.h>
 #include <R_ext/Lapack.h>
-
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 #define _bcv_dnrm2_f77  dnrm2_
 #define _bcv_dscal_f77  dscal_
@@ -75,7 +71,7 @@ _bcv_matrix_set_identity (bcv_matrix_t *a)
         {
             bzero (data, m * n * sizeof (double));
 
-            mn = MIN (m, n);
+            mn = BCV_MIN (m, n);
             for (j = 0; j < mn; j++, data += lda + 1)
                 *data = 1.0;
         }
@@ -277,7 +273,7 @@ _bcv_lapack_dlange_work_len (bcv_matrix_norm_t norm,
     
     if (norm == BCV_MATRIX_NORM_INF)
     {
-        result = MAX (1, m);
+        result = BCV_MAX (1, m);
     }
     
     return result;
@@ -368,9 +364,9 @@ _bcv_lapack_dormbr_work_len (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
     bcv_matrix_transpose_t trans = BCV_MATRIX_NOTRANS;
     bcv_index_t r   = (side == BCV_MATRIX_LEFT) ? mc : nc;
     bcv_index_t k   = (vect == BCV_MATRIX_VECT_Q) ? na : ma;
-    bcv_index_t lda = (vect == BCV_MATRIX_VECT_Q) ? MAX (1,r) 
-                                                  : MAX (1, MIN (r,k));
-    bcv_index_t ldc = MAX (1,mc);
+    bcv_index_t lda = (vect == BCV_MATRIX_VECT_Q) ? BCV_MAX (1,r) 
+                                                  : BCV_MAX (1, BCV_MIN (r,k));
+    bcv_index_t ldc = BCV_MAX (1,mc);
     double work;
     bcv_index_t lwork = -1;
     bcv_error_t info;

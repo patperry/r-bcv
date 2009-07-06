@@ -6,8 +6,6 @@
 #include "bcv-svd-gabriel-rep.h"
 #include "bcv-svd-gabriel.h"
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-
 
 struct _bcv_svd_gabriel
 {
@@ -155,7 +153,7 @@ bcv_svd_gabriel_get_max_rank (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     
     m  = bcv_partition_get_perm (bcv->row_part, i, bcv->row_perm);
     n  = bcv_partition_get_perm (bcv->col_part, j, bcv->col_perm);
-    mn = MIN (m,n);
+    mn = BCV_MIN (m,n);
     
     return mn;
 }

@@ -12,8 +12,6 @@
 #include "bcv-svd-gabriel.h"
 #include "driver.h"
 
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
-
 
 SEXP 
 driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
@@ -38,7 +36,7 @@ driver_svd (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
     rss = NUMERIC_POINTER (rss_R);
 
-    bcv_matrix_t x           = { M, N, NUMERIC_POINTER (xx), MAX (M,1) };
+    bcv_matrix_t x           = { M, N, NUMERIC_POINTER (xx), BCV_MAX (M,1) };
     bcv_partition_t row_part = { M, K, INTEGER_POINTER (s_r) };
     bcv_partition_t col_part = { N, L, INTEGER_POINTER (s_c) };
     bcv_gabriel_holdin_t max_holdin = { M, N };

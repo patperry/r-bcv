@@ -5,8 +5,6 @@
 #include "bcv-svd-gabriel-rep.h"
 #include "bcv-matrix-private.h"
 
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 struct _bcv_svd_grep
 {
@@ -39,7 +37,7 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
     _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     m  = holdin.m;
     n  = holdin.n;
-    mn = MIN (m,n);
+    mn = BCV_MIN (m,n);
     
     /* space for the bcv_svd_grep_t and x11, x12, x21, x22 */
     total = (sizeof (bcv_svd_grep_t) 
@@ -72,9 +70,9 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
                                       / sizeof (double)
                 && M <= SIZE_MAX / sizeof (double))
             {
-                work_len = MAX (decompose_e_tauq_taup 
-                                + decompose_lwork * sizeof (double),
-                                update_u);
+                work_len = BCV_MAX (decompose_e_tauq_taup 
+                                    + decompose_lwork * sizeof (double),
+                                    update_u);
 
                 if (work_len <= SIZE_MAX - total) 
                 {
@@ -131,7 +129,7 @@ bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
 {
     bcv_index_t m  = holdin.m;
     bcv_index_t n  = holdin.n;
-    bcv_index_t mn = MIN (m,n);
+    bcv_index_t mn = BCV_MIN (m,n);
     size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
     size_t double_align     = __alignof__ (double);
     void *mem;
@@ -225,7 +223,7 @@ bcv_index_t
 bcv_svd_grep_get_max_rank (bcv_svd_grep_t *bcv)
 {
     assert (bcv);
-    return MIN (bcv->x11->m, bcv->x11->n);
+    return BCV_MIN (bcv->x11->m, bcv->x11->n);
 }
 
 
@@ -266,7 +264,7 @@ bcv_svd_grep_decompose (bcv_svd_grep_t *bcv)
     
     m  = bcv->x11->m;
     n  = bcv->x11->n;
-    mn = MIN (m, n);
+    mn = BCV_MIN (m, n);
     m2 = bcv->x22->m;
     n2 = bcv->x22->n;
 
@@ -335,7 +333,7 @@ bcv_svd_grep_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M,
     
     m  = holdin.m;
     n  = holdin.n;
-    mn = MIN (m, n);
+    mn = BCV_MIN (m, n);
 
     /* We could be more precise below, replacing M with M - m and
      * N with N - n in the calls to _dormbr_work_len.  We prefer to
@@ -355,8 +353,8 @@ bcv_svd_grep_decompose_work_len (bcv_gabriel_holdin_t holdin, bcv_index_t M,
         && dormbr_Q_lwork > 0 
         && dbdsqr_lwork > 0)
     {
-        result = MAX (MAX (dgebrd_lwork, dormbr_P_lwork),
-                      MAX (dormbr_Q_lwork, dbdsqr_lwork));
+        result = BCV_MAX (BCV_MAX (dgebrd_lwork, dormbr_P_lwork),
+                          BCV_MAX (dormbr_Q_lwork, dbdsqr_lwork));
     }
     
     return result;
