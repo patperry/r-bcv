@@ -27,7 +27,8 @@ typedef struct _bcv_svd_grep bcv_svd_grep_t;
  * @N: the number of columns in the matrix
  * 
  * Allocate memory for a BCV computation large enough to be used by
- * bcv_svd_grep_init().  The workspace should be freed with bcv_svd_grep_free().
+ * bcv_svd_grep_init().  The workspace should be freed with 
+ * bcv_svd_grep_free().
  *
  * This function is monotonic in all of its arguments.
  */
@@ -40,12 +41,20 @@ bcv_svd_grep_alloc (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N);
  * @M: the number of rows in the matrix
  * @N: the number of columns in the matrix
  *
- * Returns the size (in bytes) of a BCV workspace necessary to cross-validate
- * a matrix with the given dimensions, or 0 if the workspace is larger
- * than %SIZE_MAX bytes.
+ * Returns the size (in bytes) of a BCV replicate workspace necessary to 
+ * cross-validate a matrix with the given dimensions, or 0 if the workspace
+ * is larger than %SIZE_MAX bytes.
  */
 size_t
 bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N);
+
+/**
+ * bcv_svd_grep_align:
+ *
+ * Get the alignment of a bcv_svd_grep_t structure.
+ */
+size_t
+bcv_svd_grep_align ();
 
 /**
  * bcv_svd_grep_free:

@@ -42,49 +42,57 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
     mn = MIN (m,n);
     
     /* space for the bcv_svd_grep_t and x11, x12, x21, x22 */
-    if (sizeof (bcv_matrix_t) <= (SIZE_MAX - sizeof (bcv_svd_grep_t)) / 4) 
-    {
-        total = sizeof (bcv_matrix_t) + 4 * sizeof (bcv_svd_grep_t);
+    total = (sizeof (bcv_svd_grep_t) 
+             + (__alignof__ (bcv_matrix_t) - 1) 
+             + 4 * sizeof (bcv_matrix_t)
+             + (__alignof__ (double) - 1));
         
-        /* space for the M*N data matrix */
-        if (M + 1 <= SIZE_MAX / sizeof (double) / N
-            && total <= SIZE_MAX - M * N * sizeof (double))
+    /* space for the M*N data matrix */
+    if (M <= SIZE_MAX / N
+        && M * N <= (SIZE_MAX - total) / sizeof (double))
+    {
+        total +=  M * N * sizeof (double);
+        
+        /* space for d */
+        if (mn <= (SIZE_MAX - total) / sizeof (double))
         {
-            total +=  M * N * sizeof (double);
+            total += mn * sizeof (double);
             
-            /* space for d */
-            if (mn <= (SIZE_MAX - total) / sizeof (double))
+            /* work space; the memory used by decompose() can be
+             * re-used by update()  
+             */
+            decompose_e_tauq_taup = 3 * mn * sizeof (double);
+            decompose_lwork = bcv_svd_grep_decompose_work_len (holdin, M, N);
+            update_u  = M * sizeof (double);
+            
+            if (mn <= SIZE_MAX / 3
+                && 3 * mn <= SIZE_MAX / sizeof (double)
+                && (decompose_lwork > 0 || mn == 0)
+                && decompose_lwork <= (SIZE_MAX - decompose_e_tauq_taup)
+                                      / sizeof (double)
+                && M <= SIZE_MAX / sizeof (double))
             {
-                total += mn * sizeof (double);
-                
-                /* work space; the memory used by decompose() can be
-                 * re-used by update()  
-                 */
-                decompose_e_tauq_taup = 3 * mn * sizeof (double);
-                decompose_lwork = bcv_svd_grep_decompose_work_len (holdin, M, N);
-                update_u  = M * sizeof (double);
-                
-                if (mn <= SIZE_MAX / sizeof (double) / 3
-                    && (decompose_lwork > 0 || mn == 0)
-                    && decompose_lwork <= (SIZE_MAX - decompose_e_tauq_taup)
-                                          / sizeof (double)
-                    && M <= SIZE_MAX / sizeof (double))
-                {
-                    work_len = MAX (decompose_e_tauq_taup 
-                                    + decompose_lwork * sizeof (double),
-                                    update_u);
+                work_len = MAX (decompose_e_tauq_taup 
+                                + decompose_lwork * sizeof (double),
+                                update_u);
 
-                    if (work_len <= SIZE_MAX - total) 
-                    {
-                        total += work_len;
-                        result = total;
-                    }
+                if (work_len <= SIZE_MAX - total) 
+                {
+                    total += work_len;
+                    result = total;
                 }
             }
         }
     }
     
     return result;
+}
+
+
+size_t
+bcv_svd_grep_align ()
+{
+    return __alignof__ (bcv_svd_grep_t);
 }
 
 
@@ -124,16 +132,26 @@ bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
     bcv_index_t m  = holdin.m;
     bcv_index_t n  = holdin.n;
     bcv_index_t mn = MIN (m,n);
+    size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
+    size_t double_align     = __alignof__ (double);
     void *mem;
     
     assert (bcv);
     _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
     mem            = bcv; mem += sizeof (bcv_svd_grep_t);
+    
+    mem += bcv_matrix_align - 1;
+    mem = mem - ((uintptr_t) mem & (bcv_matrix_align - 1));
+    
     bcv->x11       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x21       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x12       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x22       = mem; mem += sizeof (bcv_matrix_t);
+    
+    mem += double_align - 1;
+    mem = mem - ((uintptr_t) mem & (double_align - 1));
+    
     bcv->x11->data = mem; mem += M * N * sizeof (double);
     bcv->d         = mem; mem += mn * sizeof (double);
     bcv->work      = mem;
