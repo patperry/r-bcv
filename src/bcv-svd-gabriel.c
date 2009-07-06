@@ -1,5 +1,6 @@
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "bcv-partition.h"
 #include "bcv-svd-gabriel-rep.h"
@@ -18,39 +19,67 @@ struct _bcv_svd_gabriel
     bcv_svd_grep_t *rep;
 };
 
+
+size_t
+bcv_svd_gabriel_size (bcv_gabriel_holdin_t max_holdin, bcv_index_t M, 
+                      bcv_index_t N)
+{
+    size_t result    = 0;
+    size_t rep_size  = bcv_svd_grep_size (max_holdin, M, N);
+    size_t rep_align = bcv_svd_grep_align ();    
+    size_t total;
+    
+    total = (sizeof (bcv_svd_gabriel_t) 
+             + (__alignof__ (bcv_index_t) - 1)
+             + (rep_align - 1));
+    
+    if (M <= (SIZE_MAX - total) / sizeof (bcv_index_t))
+    {
+        total += M * sizeof (bcv_index_t);
+        
+        if (N <= (SIZE_MAX - total) / sizeof (bcv_index_t))
+        {
+            total += N * sizeof (bcv_index_t);
+            
+            if ((rep_size > 0 || M == 0 || N == 0)
+                && rep_size <= SIZE_MAX - total)
+            {
+                total += rep_size;
+                result = total;
+            }
+        }
+    }
+
+    return result;
+}
+
+
+size_t
+bcv_svd_gabriel_align ()
+{
+    return __alignof__ (bcv_svd_gabriel_t);
+}
+
+
 bcv_svd_gabriel_t *
 bcv_svd_gabriel_alloc (bcv_gabriel_holdin_t max_holdin, bcv_index_t M, 
                        bcv_index_t N)
 {
-    bcv_svd_gabriel_t *bcv = calloc (1, sizeof (bcv_svd_gabriel_t));
+    bcv_svd_gabriel_t *bcv = NULL;
+    size_t size            = bcv_svd_gabriel_size (max_holdin, M, N);
     
-    if (bcv)
-    {
-        if (!(((bcv->row_perm = malloc (M * sizeof (bcv_index_t))) 
-               || M == 0)
-              && ((bcv->col_perm = malloc (N * sizeof (bcv_index_t)))
-                  || N == 0)
-              && ((bcv->rep      = bcv_svd_grep_alloc (max_holdin, M, N)))))
-        {
-            bcv_svd_gabriel_free (bcv);
-            bcv = NULL;
-        }
-    }
-        
+    if (size > 0)
+        bcv = malloc (size);
+
     return bcv;
 }
+
 
 void
 bcv_svd_gabriel_free (bcv_svd_gabriel_t *bcv)
 {
-    if (bcv)
-    {
-        if (bcv->row_perm) free (bcv->row_perm);
-        if (bcv->col_perm) free (bcv->col_perm);
-        if (bcv->rep)      bcv_svd_grep_free (bcv->rep);
-        
+    if (bcv) 
         free (bcv);
-    }
 }
 
 
@@ -59,10 +88,27 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
                       const bcv_partition_t *rows, 
                       const bcv_partition_t *cols)
 {
+    void *mem = bcv; mem += sizeof (bcv_svd_gabriel_t);
+    size_t bcv_index_align = __alignof__ (bcv_index_t);
+    size_t rep_align       = bcv_svd_grep_align ();
+    
     assert (bcv);
-    bcv->x = x;
+    assert (x);
+        
+    bcv->x        = x;
     bcv->row_part = rows;
     bcv->col_part = cols;
+    
+    mem += bcv_index_align - 1;
+    mem = mem - ((uintptr_t) mem & (bcv_index_align - 1));
+    
+    bcv->row_perm = mem; mem += (x->m) * sizeof (bcv_index_t);
+    bcv->col_perm = mem; mem += (x->n) * sizeof (bcv_index_t);
+    
+    mem += rep_align - 1;
+    mem = mem - ((uintptr_t) mem & (rep_align - 1));
+    
+    bcv->rep = mem;
 }
 
 
@@ -74,11 +120,15 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     bcv_gabriel_holdin_t holdin;
     bcv_index_t rank = 0;
     
+    assert (bcv);
+    assert (rss);
+    
     holdin.m = bcv_partition_get_perm (bcv->row_part, i, bcv->row_perm);
     holdin.n = bcv_partition_get_perm (bcv->col_part, j, bcv->col_perm);
     
     error  = bcv_svd_grep_init_with_perm (bcv->rep, holdin, bcv->x,
                                           bcv->row_perm, bcv->col_perm);
+
     *rss++ = bcv_svd_grep_get_rss (bcv->rep);
     
     if (!error)

@@ -2,6 +2,7 @@
 #ifndef _BCV_SVD_GABRIEL_H
 #define _BCV_SVD_GABRIEL_H
 
+#include <stdlib.h>
 #include "bcv-partition.h"
 #include "bcv-types.h"
 
@@ -41,11 +42,34 @@ typedef struct _bcv_gabriel_holdin {
  *
  * Allocate enough space to hold a #bcv_svd_gabriel_t workspace for 
  * performing a Gabriel-style cross-validation of a matrix with the
- * given dimensions and the given maximum holdin sizes.
+ * given dimensions and the given maximum holdin sizes.  The workspace
+ * should be freed with bcv_svd_gabriel_free().
  */
 bcv_svd_gabriel_t *
 bcv_svd_gabriel_alloc (bcv_gabriel_holdin_t max_holdin, bcv_index_t M, 
                        bcv_index_t N);
+
+/**
+ * bcv_svd_gabriel_size:
+ * @max_holdin: the maximum holdin dimensions.
+ * @M: the number of rows in the matrix being cross-validated
+ * @N: the number of columns in the matrix being cross-validated
+ *
+ * Returns the size (in bytes) of a BCV workspace necessary to cross-validate
+ * a matrix with the given dimensions, or 0 if the workspace is larger
+ * than %SIZE_MAX bytes.
+ */
+size_t
+bcv_svd_gabriel_size (bcv_gabriel_holdin_t max_holdin, bcv_index_t M, 
+                      bcv_index_t N);
+
+/**
+ * bcv_svd_gabriel_align:
+ * 
+ * Return the alignment of a bcv_svd_gabriel_t.
+ */
+size_t
+bcv_svd_gabriel_align ();
 
 /**
  * bcv_svd_gabriel_init:
@@ -55,7 +79,8 @@ bcv_svd_gabriel_alloc (bcv_gabriel_holdin_t max_holdin, bcv_index_t M,
  * @cols: a partition of the columns of @x
  *
  * Initialize a #bcv_svd_gabriel_t workspace to cross-validate the matrix
- * @x with the hold-outs specified in the @rows and @cols partitions.
+ * @x with the hold-outs specified in the @rows and @cols partitions.  The
+ * @bcv pointer should point to at least bcv_svd_gabriel_size() free bytes.
  *
  * This function does not allocate any memory.
  */
