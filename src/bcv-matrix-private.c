@@ -4,10 +4,6 @@
 #include <strings.h>
 #include "bcv-matrix-private.h"
 
-#ifdef DEBUG
-    #include <string.h> /* for memset */
-#endif
-
 #include <R_ext/Lapack.h>
 
 #define _bcv_dnrm2_f77  dnrm2_
