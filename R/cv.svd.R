@@ -1,5 +1,5 @@
 
-cv.svd <- function(x, K, L, max.rank = floor(min(nrow(x)/K, ncol(x)/L)))
+cv.svd <- function(x, K, L, max.rank = floor(min(M - M/K, N - N/L)))
 {
     call <- match.call()
     if (!exists(".Random.seed", envir = .GlobalEnv, inherits = FALSE)) 
@@ -32,8 +32,8 @@ cv.svd <- function(x, K, L, max.rank = floor(min(nrow(x)/K, ncol(x)/L)))
     s.r <- choose.sets(M,K)
     s.c <- choose.sets(N,L)
 
-    m.r <- min( table( s.r ) )
-    n.c <- min( table( s.c ) )
+    m.r <- M - max( table( s.r ) )
+    n.c <- N - max( table( s.c ) )
     max.rank.o <- max.rank
     max.rank <- min(m.r, n.c, round( max.rank.o) )
     
