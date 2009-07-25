@@ -405,6 +405,10 @@ _bcv_lapack_dgesvd_work_len (bcv_matrix_svdjob_t jobu,
         {
             result = (bcv_index_t) work;
         }
+    } 
+    else 
+    {
+        result = 1;
     }
     
     return result;
@@ -451,6 +455,10 @@ _bcv_lapack_dgebrd_work_len (bcv_index_t m, bcv_index_t n)
         {
             result = (bcv_index_t) size;
         }
+    }
+    else
+    {
+        result = 1;
     }
 
     return result;
@@ -513,6 +521,10 @@ _bcv_lapack_dormbr_work_len (bcv_matrix_vect_t vect, bcv_matrix_side_t side,
         {
             result = (bcv_index_t) work;
         }
+    }
+    else
+    {
+        result = 1;
     }
     
     return result;
