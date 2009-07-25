@@ -84,6 +84,43 @@ _bcv_matrix_set_identity (bcv_matrix_t *a)
 
 
 void
+_bcv_matrix_set_indices (bcv_matrix_t *a, double value, 
+                         const bcv_index_t *indices, bcv_index_t num_indices)
+{
+    bcv_index_t idx, i, j, m, n, lda;
+    double *data;
+    const bcv_index_t *indices_end = indices + num_indices;
+    const bcv_index_t *pidx;
+
+    _bcv_assert_valid_matrix (a);
+    assert (indices);
+    
+    m    = a->m;
+    n    = a->n;
+    data = a->data;
+    lda  = a->lda;
+    
+    if (lda == m)
+    {
+        for (pidx = indices; pidx < indices_end; pidx++)
+        {
+            data[ *pidx ] = value;
+        }
+    }
+    else
+    {
+        for (pidx = indices; pidx < indices_end; pidx++)
+        {
+            idx = *pidx;
+            i   = idx % m;
+            j   = idx / m;
+            data[ i + j*lda ] = value;
+        }
+    }
+}
+
+
+void
 _bcv_matrix_copy (bcv_matrix_t *dst, const bcv_matrix_t *src)
 {
     _bcv_assert_valid_matrix (dst);

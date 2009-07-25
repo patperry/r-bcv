@@ -29,6 +29,19 @@ void
 _bcv_matrix_set_identity (bcv_matrix_t *a);
 
 /**
+ * _bcv_matrix_set_index
+ * @a: a matrix
+ * @value: a double value
+ * @indices: an array of 0-based column-major indices into @a.
+ * @num_indices: the length of the @indices array
+ *
+ * Set the specified elements in @a to the given @value.
+ */
+void
+_bcv_matrix_set_indices (bcv_matrix_t *a, double value, 
+                         const bcv_index_t *indices, bcv_index_t num_indices);
+
+/**
  * _bcv_matrix_copy:
  * @dst: the destination matrix
  * @src: the source matrix
