@@ -119,6 +119,13 @@ typedef enum _bcv_matrix_norm {
     BCV_MATRIX_NORM_FROB
 } bcv_matrix_norm_t;
 
+typedef enum _bcv_matrix_svdjob {
+    BCV_MATRIX_SVDJOB_ALL,
+    BCV_MATRIX_SVDJOB_SOME,
+    BCV_MATRIX_SVDJOB_OVERWRITE,
+    BCV_MATRIX_SVDJOB_NONE
+} bcv_matrix_svdjob_t;
+
 typedef enum _bcv_matrix_vect {
     BCV_MATRIX_VECT_P,
     BCV_MATRIX_VECT_Q
@@ -135,6 +142,16 @@ _bcv_lapack_dlange (bcv_matrix_norm_t norm, const bcv_matrix_t *a,
 bcv_index_t
 _bcv_lapack_dlange_work_len (bcv_matrix_norm_t norm, 
                              bcv_index_t m, bcv_index_t n);
+
+bcv_error_t
+_bcv_lapack_dgesvd (bcv_matrix_svdjob_t jobu, bcv_matrix_svdjob_t jobvt,
+                    bcv_matrix_t *a, double *s, bcv_matrix_t *u,
+                    bcv_matrix_t *vt, double *work, bcv_index_t lwork);
+
+bcv_index_t
+_bcv_lapack_dgesvd_work_len (bcv_matrix_svdjob_t jobu, 
+                             bcv_matrix_svdjob_t jobvt, bcv_index_t m,
+                             bcv_index_t n);
 
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,

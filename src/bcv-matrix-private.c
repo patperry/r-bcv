@@ -15,6 +15,7 @@
 
 #define _bcv_dlacpy_f77 dlacpy_
 #define _bcv_dlange_f77 dlange_
+#define _bcv_dgesvd_f77 dgesvd_
 #define _bcv_dgebrd_f77 dgebrd_
 #define _bcv_dormbr_f77 dormbr_
 #define _bcv_dbdsqr_f77 dbdsqr_
@@ -35,6 +36,10 @@ static char *BCV_BLAS_SIDE_CODES[] = { "L", "R" };
 static char *BCV_LAPACK_NORM_CODES[] = { "M", "O", "I", "F" };
 #define _BCV_F77_NORM(x) \
     BCV_LAPACK_NORM_CODES[(int) (x) - (int) BCV_MATRIX_NORM_MAXABS]
+
+static char *BCV_LAPACK_SVDJOB_CODES[] = { "A", "S", "O", "N" };
+#define _BCV_F77_SVDJOB(x) \
+    BCV_LAPACK_SVDJOB_CODES[(int) (x) - (int) BCV_MATRIX_SVDJOB_ALL ]
 
 static char *BCV_LAPACK_VECT_CODES[] = { "P", "Q" };
 #define _BCV_F77_VECT(x) \
@@ -312,6 +317,98 @@ _bcv_lapack_dlange_work_len (bcv_matrix_norm_t norm,
     return result;
 }
 
+bcv_error_t
+_bcv_lapack_dgesvd (bcv_matrix_svdjob_t jobu, bcv_matrix_svdjob_t jobvt,
+                    bcv_matrix_t *a, double *s, bcv_matrix_t *u,
+                    bcv_matrix_t *vt, double *work, bcv_index_t lwork)
+{
+    bcv_index_t m, n, mn, lda, ldu = 1, ldvt = 1;
+    bcv_error_t info = 0;
+    double *u_data = NULL, *vt_data = NULL;
+    
+    _bcv_assert_valid_matrix (a);
+    
+    m   = a->m;
+    n   = a->n;
+    mn  = BCV_MIN (m, n);
+    lda = a->lda;
+    
+    if (jobu == BCV_MATRIX_SVDJOB_ALL || jobu == BCV_MATRIX_SVDJOB_SOME) {
+        _bcv_assert_valid_matrix (u);
+        
+        assert (u->m == m);
+        
+        if (jobu == BCV_MATRIX_SVDJOB_ALL)
+            assert (u->n == m);
+        else
+            assert (u->n == mn);
+        
+        if (mn == 0)
+            _bcv_matrix_set_identity (u);
+            
+        u_data = u->data;
+        ldu    = u->lda;
+    }
+
+    if (jobvt == BCV_MATRIX_SVDJOB_ALL || jobvt == BCV_MATRIX_SVDJOB_SOME) {
+        _bcv_assert_valid_matrix (vt);
+     
+        assert (vt->m == n);
+        
+        if (jobu == BCV_MATRIX_SVDJOB_ALL)
+            assert (vt->n == n);
+        else
+            assert (vt->n == mn);
+        
+        if (mn == 0)
+            _bcv_matrix_set_identity (vt);
+            
+        vt_data = vt->data;
+        ldvt    = vt->lda;
+    }
+
+    if (mn > 0)
+    {
+        assert (s);
+        assert (work);
+    
+        _bcv_dgesvd_f77 (_BCV_F77_SVDJOB (jobu), _BCV_F77_SVDJOB (jobvt),
+                         &m, &n, a->data, &lda, s, u_data, &ldu, vt_data, 
+                         &ldvt, work, &lwork, &info);
+        assert (info >= 0);
+    }
+    
+    return info;
+}
+
+bcv_index_t
+_bcv_lapack_dgesvd_work_len (bcv_matrix_svdjob_t jobu, 
+                             bcv_matrix_svdjob_t jobvt, bcv_index_t m,
+                             bcv_index_t n)
+{
+    bcv_index_t result = 0;
+    bcv_index_t lda  = BCV_MAX (1,m);
+    bcv_index_t ldu  = BCV_MAX (1,m);
+    bcv_index_t ldvt = BCV_MAX (1,n);
+    double work;
+    bcv_index_t lwork = -1;
+    bcv_error_t info;
+    
+    if (m > 0 && n > 0)
+    {
+        _bcv_dgesvd_f77 (_BCV_F77_SVDJOB (jobu), _BCV_F77_SVDJOB (jobvt),
+                         &m, &n, NULL, &lda, NULL, NULL, &ldu, NULL, &ldvt,
+                         &work, &lwork, &info);
+        assert (info == 0);
+    
+        if (work <= (double) BCV_MAX_INDEX)
+        {
+            result = (bcv_index_t) work;
+        }
+    }
+    
+    return result;
+}
 
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
