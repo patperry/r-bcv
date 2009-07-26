@@ -185,6 +185,8 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
     }
     while (!err && delta > tol && iter < max_iter);
     
+    impute->iter = iter;
+    
     return err;
 }
 
