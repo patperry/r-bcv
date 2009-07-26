@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <strings.h>
+#include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
 
 #include <R_ext/Lapack.h>
@@ -55,6 +56,33 @@ static char *BCV_LAPACK_JOB_CODES[] = { "A", "S", "O", "N" };
 #define _BCV_JOB(x) BCV_LAPACK_JOB_CODES[(int) (x) - (int) BCV_JOB_ALL]
 */
 
+void
+_bcv_matrix_set_constant (bcv_matrix_t *a, double value)
+{
+    _bcv_assert_valid_matrix (a);
+
+    bcv_index_t m, n, lda;
+    
+    m   = a->m;
+    n   = a->n;
+    lda = a ->lda;
+    
+    if (lda == m)
+    {
+        bcv_vector_t vec_a = { m*n, a->data, 1 };
+        _bcv_vector_set_constant (&vec_a, value);
+    }
+    else
+    {
+        bcv_index_t j;
+        bcv_vector_t a_j = { m, a->data, 1 };
+        
+        for (j = 0; j < n; j++, a_j.data += lda)
+        {
+            _bcv_vector_set_constant (&a_j, value);
+        }
+    }
+}
 
 void
 _bcv_matrix_set_identity (bcv_matrix_t *a)

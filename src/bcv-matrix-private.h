@@ -19,6 +19,16 @@ typedef enum _bcv_matrix_transpose {
 } bcv_matrix_transpose_t;
 
 /**
+ * _bcv_matrix_set_constant
+ * @a: a matrix
+ * @value: a double value
+ *
+ * Set all elements of @a to the given @value.
+ */
+void
+_bcv_matrix_set_constant (bcv_matrix_t *a, double value);
+
+/**
  * _bcv_matrix_set_identity:
  * @a: a matrix
  *
