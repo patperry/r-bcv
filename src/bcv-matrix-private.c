@@ -87,7 +87,7 @@ _bcv_matrix_set_constant (bcv_matrix_t *a, double value)
 void
 _bcv_matrix_set_identity (bcv_matrix_t *a)
 {
-    int m, n, mn, lda, j;
+    bcv_index_t m, n, mn, lda, j;
     double *data;
     
     _bcv_assert_valid_matrix (a);
