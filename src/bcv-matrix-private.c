@@ -13,6 +13,8 @@
 #define _bcv_dgemv_f77  dgemv_
 #define _bcv_dger_f77   dger_
 
+#define _bcv_dgemm_f77  dgemm_
+
 #define _bcv_dlacpy_f77 dlacpy_
 #define _bcv_dlange_f77 dlange_
 #define _bcv_dgesvd_f77 dgesvd_
@@ -273,6 +275,36 @@ _bcv_blas_dger (double alpha, const bcv_vector_t *x, const bcv_vector_t *y,
                    y->data, &(y->inc), a->data, &(a->lda));
 }
 
+
+void
+_bcv_blas_dgemm (bcv_matrix_transpose_t transA,
+                 bcv_matrix_transpose_t transB,
+                 double alpha, const bcv_matrix_t *a,
+                 const bcv_matrix_t *b, double beta,
+                 bcv_matrix_t *c)
+{
+    bcv_index_t m, n, k, k2;
+    
+    _bcv_assert_valid_matrix (a);
+    _bcv_assert_valid_matrix (b);
+    _bcv_assert_valid_matrix (c);
+
+    m  = (transA == BCV_MATRIX_NOTRANS) ? a->m : a->n;
+    k  = (transA == BCV_MATRIX_NOTRANS) ? a->n : a->m;
+    k2 = (transB == BCV_MATRIX_NOTRANS) ? b->m : b->n;
+    n  = (transB == BCV_MATRIX_NOTRANS) ? b->n : b->m;
+        
+    assert (c->m == m);
+    assert (c->n == n);
+    assert (k == k2);
+    
+    _bcv_dgemm_f77 (_BCV_F77_TRANS (transA), _BCV_F77_TRANS (transB),
+                    &m, &n, &k, &alpha, 
+                    a->data, &(a->lda), 
+                    b->data, &(b->lda),
+                    &beta,
+                    c->data, &(c->lda));
+}
 
 void
 _bcv_lapack_dlacpy (bcv_matrix_uplo_t uplo, const bcv_matrix_t *a, 

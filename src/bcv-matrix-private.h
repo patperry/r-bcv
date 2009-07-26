@@ -98,6 +98,12 @@ void
 _bcv_blas_dger (double alpha, const bcv_vector_t *x, const bcv_vector_t *y, 
                 bcv_matrix_t *a);
 
+void
+_bcv_blas_dgemm (bcv_matrix_transpose_t transA,
+                 bcv_matrix_transpose_t transB,
+                 double alpha, const bcv_matrix_t *a,
+                 const bcv_matrix_t *b, double beta,
+                 bcv_matrix_t *c);
 
 /* low-level LAPACK SVD routines */
 
