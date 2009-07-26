@@ -1,6 +1,6 @@
 
 svd.impute.check <- function( impute ) {
-    function( x, k=min(n,p), tol=1e-12, maxiter=1000 ) {
+    function( x, k=min(n,p), tol=1e-10, maxiter=100 ) {
         x  <- as.matrix( x )
         n  <- nrow( x )
         p  <- ncol( x )
@@ -64,10 +64,11 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
     iter  <- 0
     
     while( ( delta > tol ) && ( iter < maxiter ) ) {
-        xhat0.svd <- svd( xhat0 )
-        uhat      <- xhat0.svd$u[ ,K,drop=FALSE ] 
-        dhat      <- xhat0.svd$d[ K ] 
-        vhat      <- xhat0.svd$v[ ,K,drop=FALSE ]
+        xhat0[ !missing ] <- x[ !missing ]
+        xhat0.svd         <- svd( xhat0 )
+        uhat              <- xhat0.svd$u[ ,K,drop=FALSE ] 
+        dhat              <- xhat0.svd$d[ K ] 
+        vhat              <- xhat0.svd$v[ ,K,drop=FALSE ]
         
         xhat1 <- uhat %*% ( dhat * t( vhat ) )
         
