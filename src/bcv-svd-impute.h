@@ -23,7 +23,8 @@ bcv_svd_impute_align ();
 
 bcv_error_t
 bcv_svd_impute_init (bcv_svd_impute_t *impute, const bcv_matrix_t *x, 
-                     const bcv_index_t *indices, bcv_index_t num_indices);
+                     const bcv_index_t *indices, bcv_index_t num_indices,
+                     bcv_index_t k, double tol, bcv_index_t max_iter);
 
 
 
