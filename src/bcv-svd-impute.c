@@ -20,7 +20,8 @@ bcv_svd_impute_svd_lwork (bcv_index_t m, bcv_index_t n);
  *   - a vector of ones in the first column of impute->ud.
  */
 static void
-bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, const bcv_matrix_t *x, 
+bcv_svd_col_mean_impute (bcv_svd_impute_t *impute,
+                         bcv_matrix_t *xhat, const bcv_matrix_t *x, 
                          const bcv_index_t *indices, bcv_index_t num_indices);
 
 /*
@@ -37,22 +38,15 @@ bcv_matrix_miss_counts (bcv_index_t m, bcv_index_t n,
  * Return error on failure to compute the SVD.
  */
 static bcv_error_t
-bcv_svd_impute_step (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
-                     const bcv_index_t *indices, bcv_index_t num_indices,
-                     bcv_index_t k);
+bcv_svd_impute_step (bcv_svd_impute_t *impute, 
+                     bcv_matrix_t *xhat, const bcv_matrix_t *x,
+                     const bcv_index_t *indices, bcv_index_t num_indices);
 
 /*
  * Decompose xhat = u d vt.  Set ud, d, and vt.  Destroy the memory in xhat.
  */
 static bcv_error_t
-bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute);
-
-/*
- * Reconstruct xhat := u[k] d[k] vt[k] (the first k terms of the SVD).
- * This assumes that ud and vt are stored in @impute.
- */
-static void
-bcv_svd_impute_reconstruct_xhat (bcv_svd_impute_t *impute, bcv_index_t k);
+bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat);
 
 /*
  * Replace non-missing values in @xhat with the values from @x.  Return the
@@ -65,13 +59,12 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
                                const bcv_index_t *indices, 
                                bcv_index_t num_indices);
 
-struct _bcv_svd_impute 
+struct _bcv_svd_impute
 {
     double rss;
     bcv_index_t iter;
 
     bcv_index_t k;
-    bcv_matrix_t *xhat;
     bcv_matrix_t *ud;
     bcv_matrix_t *vt;
     double *d;
@@ -98,15 +91,13 @@ bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n)
     
     if (colmean_work_size > 0 && svd_work_size > 0
         && (impute = calloc (1, sizeof (bcv_svd_impute_t)))
-        && (impute->xhat = calloc (1, sizeof (bcv_matrix_t)))
         && (impute->ud   = calloc (1, sizeof (bcv_matrix_t)))
         && (impute->vt   = calloc (1, sizeof (bcv_matrix_t)))
         && (impute->work = malloc (work_size)))
     {    
         if (mn > 0)
         {
-            if ((impute->xhat->data = malloc (m * n * sizeof (double)))
-                && (impute->ud->data = malloc (m * mn * sizeof (double)))
+            if ((impute->ud->data = malloc (m * mn * sizeof (double)))
                 && (impute->vt->data = malloc (n * mn * sizeof (double)))
                 && (impute->d        = malloc (mn * sizeof (double))))
             {
@@ -131,11 +122,6 @@ bcv_svd_impute_free (bcv_svd_impute_t *impute)
 {
     if (impute)
     {
-        if (impute->xhat)
-        {
-            if (impute->xhat->data) free (impute->xhat->data);
-            free (impute->xhat);
-        }
         if (impute->ud)
         {
             if (impute->ud->data) free (impute->ud->data);
@@ -156,9 +142,10 @@ bcv_svd_impute_free (bcv_svd_impute_t *impute)
 
 
 bcv_error_t
-bcv_svd_impute_init (bcv_svd_impute_t *impute, const bcv_matrix_t *x, 
-                     const bcv_index_t *indices, bcv_index_t num_indices,
-                     bcv_index_t k, double tol, bcv_index_t max_iter)
+bcv_svd_impute (bcv_svd_impute_t *impute,
+                bcv_matrix_t *xhat, const bcv_matrix_t *x, 
+                const bcv_index_t *indices, bcv_index_t num_indices,
+                bcv_index_t k, double tol, bcv_index_t max_iter)
 {
     bcv_error_t err = 0;
     bcv_index_t m, n, lwork;
@@ -173,13 +160,15 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
     lwork          = bcv_svd_impute_svd_lwork (m, n);
     impute->lwork  = lwork;
     
-    bcv_svd_col_mean_impute (impute, x, indices, num_indices);
+    impute->k = k;
+    
+    bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);
     do
     {
         rss0 = rss1;
         iter++;
         
-        err   = bcv_svd_impute_step (impute, x, indices, num_indices, k);
+        err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
         rss1  = impute->rss;
         delta = abs (rss1 - rss0) / (2.220446e-16 + rss1);
     }
@@ -188,6 +177,22 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
     impute->iter = iter;
     
     return err;
+}
+
+
+bcv_index_t
+bcv_svd_impute_get_iter (const bcv_svd_impute_t *impute)
+{
+    assert (impute);
+    return impute->iter;
+}
+
+
+double
+bcv_svd_impute_get_rss (const bcv_svd_impute_t *impute)
+{
+    assert (impute);
+    return impute->rss;
 }
 
 
@@ -209,7 +214,8 @@ bcv_svd_impute_svd_lwork (bcv_index_t m, bcv_index_t n)
 
 
 void
-bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, const bcv_matrix_t *x, 
+bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, 
+                         bcv_matrix_t *xhat,  const bcv_matrix_t *x, 
                          const bcv_index_t *indices, bcv_index_t num_indices)
 {
     bcv_index_t m, n, i, j, idx;
@@ -220,8 +226,8 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
     assert (impute);
     assert (num_indices >= 0);
     
-    _bcv_matrix_copy (impute->xhat, x);
-    _bcv_matrix_set_indices (impute->xhat, 0.0, indices, num_indices);
+    _bcv_matrix_copy (xhat, x);
+    _bcv_matrix_set_indices (xhat, 0.0, indices, num_indices);
     
     m = x->m;
     n = x->n;
@@ -234,7 +240,7 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
         bcv_index_t count;
 
         _bcv_vector_set_constant (&one, 1.0);
-        _bcv_blas_dgemv (BCV_MATRIX_TRANS, 1.0, impute->xhat, &one, 0.0, &mu);
+        _bcv_blas_dgemv (BCV_MATRIX_TRANS, 1.0, xhat, &one, 0.0, &mu);
         bcv_matrix_miss_counts (m, n, indices, num_indices, NULL, missing);
         
         for (j = 0; j < n; j++)
@@ -259,7 +265,7 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
             
             assert (0 <= idx && idx < m*n);
             
-            impute->xhat->data[idx] = mu.data[j];
+            xhat->data[idx] = mu.data[j];
         }
     }
 }
@@ -300,20 +306,19 @@ bcv_matrix_miss_counts (bcv_index_t m, bcv_index_t n,
 }
 
 bcv_error_t
-bcv_svd_impute_step (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
-                     const bcv_index_t *indices, bcv_index_t num_indices,
-                     bcv_index_t k)
+bcv_svd_impute_step (bcv_svd_impute_t *impute, 
+                     bcv_matrix_t *xhat, const bcv_matrix_t *x,
+                     const bcv_index_t *indices, bcv_index_t num_indices)
 {
     bcv_error_t err;
     double rss;
     
-    err = bcv_svd_impute_decompose_xhat (impute);
+    err = bcv_svd_impute_decompose_xhat (impute, xhat);
     
     if (!err)
     {
-        bcv_svd_impute_reconstruct_xhat (impute, k);
-        rss = bcv_impute_replace_nonmissing (impute->xhat, x, indices,
-                                             num_indices);
+        bcv_svd_impute_get_svd (impute, xhat);
+        rss = bcv_impute_replace_nonmissing (xhat, x, indices, num_indices);
         impute->rss = rss;
     }
     
@@ -322,7 +327,7 @@ bcv_svd_impute_step (bcv_svd_impute_t *impute, const bcv_matrix_t *x,
 
 
 bcv_error_t
-bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute)
+bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat)
 {
     bcv_index_t i, m, n, mn, ldu;
     bcv_error_t info;
@@ -331,11 +336,11 @@ bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute)
     assert (impute);
 
     info = _bcv_lapack_dgesvd (BCV_MATRIX_SVDJOB_SOME, BCV_MATRIX_SVDJOB_SOME,
-                               impute->xhat, impute->d, impute->ud,
+                               xhat, impute->d, impute->ud,
                                impute->vt, impute->work, impute->lwork);
 
-    m   = impute->xhat->m;
-    n   = impute->xhat->n;
+    m   = xhat->m;
+    n   = xhat->n;
     mn  = BCV_MIN (m,n);
     ldu = impute->ud->lda;
     
@@ -353,11 +358,16 @@ bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute)
 
 
 void
-bcv_svd_impute_reconstruct_xhat (bcv_svd_impute_t *impute, bcv_index_t k)
+bcv_svd_impute_get_svd (const bcv_svd_impute_t *impute, bcv_matrix_t *udvt)
 {
+    bcv_index_t k;
+    
     assert (impute);
-    assert (impute->xhat);
-    assert (0 <= k && k < BCV_MIN (impute->xhat->m, impute->xhat->n));
+    assert (udvt);
+    
+    k = impute->k;
+    
+    assert (0 <= k && k < BCV_MIN (udvt->m, udvt->n));
     
     if (k > 0)
     {
@@ -368,13 +378,14 @@ bcv_svd_impute_reconstruct_xhat (bcv_svd_impute_t *impute, bcv_index_t k)
         vt_k.n = k;
     
         _bcv_blas_dgemm (BCV_MATRIX_NOTRANS, BCV_MATRIX_TRANS,  
-                         1.0, &ud_k, &vt_k, 0.0, impute->xhat);
+                         1.0, &ud_k, &vt_k, 0.0, udvt);
     }
     else
     {
-        _bcv_matrix_set_constant (impute->xhat, 0.0);
+        _bcv_matrix_set_constant (udvt, 0.0);
     }
 }
+
 
 double
 bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
