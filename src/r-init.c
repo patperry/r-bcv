@@ -3,10 +3,10 @@
 #include <Rinternals.h>
 #include <R_ext/Rdynload.h>
 
-#include "driver.h"
+#include "r-bcv-svd-gabriel.h"
 
 static R_CallMethodDef callMethods[] = {
-    { "driver_svd", (DL_FUNC) &driver_svd, 6 },
+    { "R_bcv_svd_gabriel", (DL_FUNC) &R_bcv_svd_gabriel, 6 },
     { NULL        , NULL                 , 0 }
 };
 

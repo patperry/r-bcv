@@ -40,7 +40,7 @@ cv.svd <- function(x, K, L, max.rank = floor(min(M - M/K, N - N/L)))
     if (!missing(max.rank) && max.rank != max.rank.o)
         warning("max.rank has been set to ", max.rank)
     
-    cv <- .Call("driver_svd", x, K, L, max.rank, 
+    cv <- .Call("R_bcv_svd_gabriel", x, K, L, max.rank, 
                 as.integer( s.r-1 ), as.integer( s.c-1 ))
     list(call=call, K=K, L=L, max.rank=max.rank, cv=cv, 
          row.sets=s.r, col.sets=s.c, seed=seed)
