@@ -152,7 +152,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     bcv_error_t err = 0;
     bcv_index_t m, n, mn, lwork;
     bcv_index_t iter = 0;
-    double rss0, rss1 = (double) 1.0/0.0, delta;
+    double rss0, rss1 = BCV_DBL_POSINF, delta;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
@@ -179,7 +179,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
         
         err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
         rss1  = impute->rss;
-        delta = fabs (rss1 - rss0) / (2.220446e-16 + rss1);
+        delta = fabs (rss1 - rss0) / (BCV_DBL_EPSILON + rss1);
         
         printf ("iter: %d rss: %g  delta: %g\n", iter, rss1, delta);
     }
