@@ -412,11 +412,11 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
                                const bcv_index_t *indices, 
                                bcv_index_t num_indices)
 {
-    double rss = 0.0;
+    double rss = 1.0, scale = 0.0;
     bcv_index_t m, n, ldx, ldxhat, i, i_start, i_end, col_start, col_end;
     bcv_index_t idx, idx_end, next_miss = 0;
     double *x_j, *xhat_j;
-    double x_ij, xhat_ij, d_ij, s_ij;
+    double x_ij, xhat_ij, d_ij, abs_d_ij;
     
     _bcv_assert_valid_matrix (xhat);
     _bcv_assert_valid_matrix (x);
@@ -498,10 +498,23 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
                 xhat_ij   = xhat_j[i];
                 xhat_j[i] = x_ij;
 
-                /* update RSS */
+                /* numerically-stable RSS update based on LAPACK's dnrm2 */
                 d_ij = x_ij - xhat_ij;
-                s_ij = d_ij * d_ij;
-                rss += s_ij;
+                if (d_ij != 0)
+                {
+                    abs_d_ij = fabs (d_ij);
+                    if (scale < abs_d_ij)
+                    {
+                        double ratio = scale / abs_d_ij;
+                        rss   = 1.0 + rss * (ratio * ratio);
+                        scale = abs_d_ij;
+                    }
+                    else
+                    {
+                        double ratio_inv = abs_d_ij / scale;
+                        rss   = rss + ratio_inv * ratio_inv;
+                    }
+                }
             }
         }
         
@@ -513,5 +526,5 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
     assert (idx == idx_end);
     assert (num_indices == 0);
     
-    return rss;
+    return rss * (scale * scale);
 }
