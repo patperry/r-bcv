@@ -6,7 +6,6 @@
 #include "bcv-matrix-private.h"
 #include "bcv-svd-impute.h"
 
-#include <R_ext/Utils.h>
 
 /*
  * Return the length of the work array needed for the SVD computation
@@ -36,15 +35,6 @@ bcv_matrix_miss_counts (bcv_index_t m, bcv_index_t n,
                         bcv_index_t *row_counts, bcv_index_t *col_counts);
 
 /*
- * Perform one step of the EM algorithm with initial values in impute->xhat.
- * Return error on failure to compute the SVD.
- */
-static bcv_error_t
-bcv_svd_impute_step (bcv_svd_impute_t *impute, 
-                     bcv_matrix_t *xhat, const bcv_matrix_t *x,
-                     const bcv_index_t *indices, bcv_index_t num_indices);
-
-/*
  * Decompose xhat = u d vt.  Set ud, d, and vt.  Destroy the memory in xhat.
  */
 static bcv_error_t
@@ -64,7 +54,6 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
 struct _bcv_svd_impute
 {
     double rss;
-    bcv_index_t iter;
 
     bcv_index_t k;
     bcv_matrix_t *ud;
@@ -142,17 +131,13 @@ bcv_svd_impute_free (bcv_svd_impute_t *impute)
     }
 }
 
-
-bcv_error_t
-bcv_svd_impute (bcv_svd_impute_t *impute,
-                bcv_matrix_t *xhat, const bcv_matrix_t *x, 
-                const bcv_index_t *indices, bcv_index_t num_indices,
-                bcv_index_t k, double tol, bcv_index_t max_iter)
+void
+bcv_svd_impute_init (bcv_svd_impute_t *impute, 
+                     bcv_matrix_t *xhat, const bcv_matrix_t *x, 
+                     const bcv_index_t *indices, bcv_index_t num_indices,
+                     bcv_index_t k)
 {
-    bcv_error_t err = 0;
     bcv_index_t m, n, mn, lwork;
-    bcv_index_t iter = 0;
-    double rss0, rss1 = BCV_DBL_POSINF, delta;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
@@ -161,13 +146,6 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     n     = x->n;
     mn    = BCV_MIN (m,n);
     lwork = bcv_svd_impute_svd_lwork (m, n);
-
-    /* quick return if possible */
-    if (mn == 0) {
-        impute->iter = 0;
-        impute->rss  = 0.0;
-        return 0;
-    }
 
     impute->k       = k;
     impute->ud->m   = m;
@@ -178,31 +156,9 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     impute->vt->lda = mn;
     impute->lwork   = lwork;
     
-    bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);
-    do
-    {
-        R_CheckUserInterrupt ();
-        
-        rss0 = rss1;
-        iter++;
-        
-        err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
-        rss1  = impute->rss;
-        delta = fabs (rss1 - rss0) / (BCV_DBL_EPSILON + rss1);
-    }
-    while (!err && delta > tol && iter < max_iter);
+    impute->rss = 0.0;
     
-    impute->iter = iter;
-    
-    return err;
-}
-
-
-bcv_index_t
-bcv_svd_impute_get_iter (const bcv_svd_impute_t *impute)
-{
-    assert (impute);
-    return impute->iter;
+    bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);    
 }
 
 

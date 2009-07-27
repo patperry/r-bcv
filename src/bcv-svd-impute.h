@@ -21,14 +21,16 @@ size_t
 bcv_svd_impute_align ();
 */
 
-bcv_error_t
-bcv_svd_impute (bcv_svd_impute_t *impute, 
-                bcv_matrix_t *xhat, const bcv_matrix_t *x, 
-                const bcv_index_t *indices, bcv_index_t num_indices,
-                bcv_index_t k, double tol, bcv_index_t max_iter);
+void
+bcv_svd_impute_init (bcv_svd_impute_t *impute, 
+                     bcv_matrix_t *xhat, const bcv_matrix_t *x, 
+                     const bcv_index_t *indices, bcv_index_t num_indices,
+                     bcv_index_t k);
 
-bcv_index_t
-bcv_svd_impute_get_iter (const bcv_svd_impute_t *impute);
+bcv_error_t
+bcv_svd_impute_step (bcv_svd_impute_t *impute, 
+                     bcv_matrix_t *xhat, const bcv_matrix_t *x, 
+                     const bcv_index_t *indices, bcv_index_t num_indices);
 
 double
 bcv_svd_impute_get_rss (const bcv_svd_impute_t *impute);
