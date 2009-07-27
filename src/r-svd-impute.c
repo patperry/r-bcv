@@ -55,9 +55,6 @@ R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
     iter = bcv_svd_impute_get_iter (impute);
     rss  = bcv_svd_impute_get_rss (impute);
 
-    if (iter == maxiter)
-        warning ("Did not converge in '%d' iterations.", maxiter);
-
     bcv_svd_impute_free (impute);
 
     PROTECT (dimdim = allocVector (INTSXP, 2));
