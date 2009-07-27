@@ -82,8 +82,18 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
         
     x[ missing ] <- xhat0[ missing ]
     
-    list( imputed=missing.idx, x=x, u=uhat, d=dhat, v=vhat, 
-          iter=iter, rss=rss0 )
+    list( x=x, rss=rss0, iter=iter )
 }
-
 svd.impute.R <- svd.impute.check( svd.impute.R.unchecked )
+
+svd.impute.C.unchecked <- function( x, k, tol, maxiter )
+{
+    storage.mode( x ) <- "double"
+    
+    res <- .Call( "R_svd_impute", x, k, tol, maxiter )
+    names( res ) <- c("x", "rss", "iter")
+    res
+}
+svd.impute.C <- svd.impute.check( svd.impute.C.unchecked )
+
+svd.impute <- svd.impute.C
