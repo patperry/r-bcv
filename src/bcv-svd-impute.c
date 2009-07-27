@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <string.h>
 #include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
@@ -63,6 +64,71 @@ struct _bcv_svd_impute
     void *work;
     bcv_index_t lwork;
 };
+
+
+size_t
+bcv_svd_impute_size (bcv_index_t m, bcv_index_t n)
+{
+    size_t result = 0, total, data_align;
+    bcv_index_t mn = BCV_MIN (m,n);
+    bcv_index_t lwork, svd_work_size, colmean_work_size, work_size;
+    
+    data_align = BCV_MAX (__alignof__ (double),
+                          __alignof__ (bcv_index_t));
+                          
+    /* space for the bcv_svd_impute_t and ud, vt */
+    total = (sizeof (bcv_svd_impute_t) 
+             + (__alignof__ (bcv_matrix_t) - 1) 
+             + 2 * sizeof (bcv_matrix_t)
+             + (data_align - 1));
+
+    /* space for ud */
+    if (m <= SIZE_MAX / mn
+        && m * mn <= (SIZE_MAX - total) / sizeof (double))
+    {
+        total +=  m * mn * sizeof (double);
+        
+        /* space for vt */
+        if (mn <= SIZE_MAX / n
+            && mn * n <= (SIZE_MAX - total) / sizeof (double))
+        {
+            total += mn * n * sizeof (double);
+        
+            /* space for d */
+            if (mn <= (SIZE_MAX - total) / sizeof (double))
+            {
+                total += mn * sizeof (double);
+
+                /* we can re-use the workspace for computing the column
+                 * mean and comuting the column means */
+                lwork = bcv_svd_impute_svd_lwork (m, n);
+                if (n <= SIZE_MAX / sizeof (bcv_index_t)
+                    && lwork > 0
+                    && lwork <= SIZE_MAX / sizeof (double))
+                {
+                    svd_work_size     = lwork * sizeof (double);
+                    colmean_work_size = n * sizeof (bcv_index_t);
+                    work_size = BCV_MAX (colmean_work_size, svd_work_size);
+                    
+                    if (work_size <= SIZE_MAX - total)
+                    {
+                        total += work_size;
+                        result = total;
+                    }
+                }
+            }
+        }
+    }
+    
+    return result;
+}
+
+
+size_t
+bcv_svd_impute_align ()
+{
+    return __alignof__ (bcv_svd_impute_t);
+}
 
 
 bcv_svd_impute_t *

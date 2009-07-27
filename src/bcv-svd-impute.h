@@ -13,13 +13,11 @@ bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n);
 void
 bcv_svd_impute_free (bcv_svd_impute_t *impute);
 
-/*
 size_t
-bcv_svd_impute_size (bcv_index_t m, bcv_index_t n, bcv_index_t missing);
+bcv_svd_impute_size (bcv_index_t m, bcv_index_t n);
 
 size_t
 bcv_svd_impute_align ();
-*/
 
 void
 bcv_svd_impute_init (bcv_svd_impute_t *impute, 
