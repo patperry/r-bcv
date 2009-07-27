@@ -4,6 +4,21 @@
 
 #include <limits.h>
 
+/**
+ * BCV_DBL_EPSILON:
+ *
+ * The smallest value x such that 1 + x != 1.
+ */
+#define BCV_DBL_EPSILON 2.2204460492503131e-16
+
+/**
+ * BCV_POSINF, BCV_NEGINF:
+ *
+ * Positive and negative infinities.
+ */
+#define BCV_DBL_POSINF ((double) 1.0 / 0.0)
+#define BCV_DBL_NEGINF (-BCV_DBL_POSINF)
+
 /** 
  * BCV_MIN:
  * @a: the first value
