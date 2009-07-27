@@ -342,7 +342,7 @@ bcv_error_t
 bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat)
 {
     bcv_error_t info = 0;
-    bcv_index_t i, m, n, mn, ldu;
+    bcv_index_t i, m, n, mn, ldu, k;
     bcv_vector_t u_i;
     
     assert (impute);
@@ -351,14 +351,16 @@ bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat)
     m  = xhat->m;
     n  = xhat->n;
     mn = BCV_MIN (m,n);
+    k  = impute->k;
 
     if (mn > 0)
     {
         _bcv_assert_valid_matrix (impute->ud);
 
-        info = _bcv_lapack_dgesvd (BCV_MATRIX_SVDJOB_SOME, BCV_MATRIX_SVDJOB_SOME,
-                                   xhat, impute->d, impute->ud,
-                                   impute->vt, impute->work, impute->lwork);
+        info = _bcv_lapack_dgesvd (BCV_MATRIX_SVDJOB_SOME, 
+                                   BCV_MATRIX_SVDJOB_SOME,
+                                   xhat, impute->d, impute->ud, impute->vt, 
+                                   impute->work, impute->lwork);
 
         u_i.n    = m;
         u_i.data = impute->ud->data;
@@ -366,7 +368,7 @@ bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat)
     
         ldu = impute->ud->lda;
     
-        for (i = 0; i < mn; i++, u_i.data += ldu)
+        for (i = 0; i < k; i++, u_i.data += ldu)
         {
             _bcv_blas_dscal (impute->d[i], &u_i);
         }
