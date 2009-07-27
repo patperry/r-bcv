@@ -1,6 +1,6 @@
 
 svd.impute.check <- function( impute ) {
-    function( x, k=min(n,p), tol=1e-10, maxiter=100 ) {
+    function( x, k=min(n,p), tol=max(n,p)*1e-10, maxiter=100 ) {
         x  <- as.matrix( x )
         n  <- nrow( x )
         p  <- ncol( x )
