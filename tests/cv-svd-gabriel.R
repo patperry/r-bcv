@@ -87,7 +87,7 @@ sizes <- function( ntests, each=2 )
 }
 
 require( bcv )
-ntests <- 1000
+ntests <- 500
 s <- sizes( ntests )
 set.seed( 0 )
 

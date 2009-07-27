@@ -52,6 +52,10 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
     p <- ncol( x )
     K <- seq_len( k )
       
+    if (n == 0 || p == 0) {
+        return( list( x=x, rss=0, iter=0 ) )
+    }
+
     missing     <- is.na( x )
     missing.idx <- which( missing )
     missing.j   <- ( ( missing.idx-1 ) %/% n ) + 1
@@ -80,8 +84,6 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
         iter  <- iter + 1
         xhat0 <- xhat1
         rss0  <- rss1
-        
-        cat( "iter: ", iter, " rss: ", rss0, "delta: ", delta, "\n", sep='')
     }
         
     x[ missing ] <- xhat0[ missing ]
