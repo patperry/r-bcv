@@ -413,12 +413,12 @@ _bcv_lapack_dgesvd (bcv_matrix_svdjob_t jobu, bcv_matrix_svdjob_t jobvt,
     if (jobvt == BCV_MATRIX_SVDJOB_ALL || jobvt == BCV_MATRIX_SVDJOB_SOME) {
         _bcv_assert_valid_matrix (vt);
      
-        assert (vt->m == n);
+        assert (vt->n == n);
         
         if (jobu == BCV_MATRIX_SVDJOB_ALL)
-            assert (vt->n == n);
+            assert (vt->m == n);
         else
-            assert (vt->n == mn);
+            assert (vt->m == mn);
         
         if (mn == 0)
             _bcv_matrix_set_identity (vt);
@@ -435,6 +435,7 @@ _bcv_lapack_dgesvd (bcv_matrix_svdjob_t jobu, bcv_matrix_svdjob_t jobvt,
         _bcv_dgesvd_f77 (_BCV_F77_SVDJOB (jobu), _BCV_F77_SVDJOB (jobvt),
                          &m, &n, a->data, &lda, s, u_data, &ldu, vt_data, 
                          &ldvt, work, &lwork, &info);
+
         assert (info >= 0);
     }
     
