@@ -148,19 +148,26 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
                 bcv_index_t k, double tol, bcv_index_t max_iter)
 {
     bcv_error_t err = 0;
-    bcv_index_t m, n, lwork;
+    bcv_index_t m, n, mn, lwork;
     bcv_index_t iter = 0;
     double rss0, rss1 = 1.0/0.0, delta;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
     
-    m              = x->m;
-    n              = x->n;
-    lwork          = bcv_svd_impute_svd_lwork (m, n);
-    impute->lwork  = lwork;
-    
-    impute->k = k;
+    m     = x->m;
+    n     = x->n;
+    mn    = BCV_MIN (m,n);
+    lwork = bcv_svd_impute_svd_lwork (m, n);
+
+    impute->k       = k;
+    impute->ud->m   = m;
+    impute->ud->n   = mn;
+    impute->ud->lda = m;
+    impute->vt->m   = n;
+    impute->vt->n   = mn;
+    impute->vt->lda = n;
+    impute->lwork   = lwork;
     
     bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);
     do
