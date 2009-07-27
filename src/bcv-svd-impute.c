@@ -1,5 +1,7 @@
 
 #include <assert.h>
+#include <math.h>
+#include <stdio.h>
 #include <string.h>
 #include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
@@ -85,12 +87,12 @@ bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n)
     assert (m >= 0);
     assert (n >= 0);
     
-    colmean_work_size = n * sizeof (bcv_index_t);
+    colmean_work_size = BCV_MAX (n, 1) * sizeof (bcv_index_t);
     svd_work_size     = bcv_svd_impute_svd_lwork (m, n) * sizeof (double);
     work_size         = BCV_MAX (colmean_work_size, svd_work_size);
     
     if (colmean_work_size > 0 && svd_work_size > 0
-        && (impute = calloc (1, sizeof (bcv_svd_impute_t)))
+        && (impute       = calloc (1, sizeof (bcv_svd_impute_t)))
         && (impute->ud   = calloc (1, sizeof (bcv_matrix_t)))
         && (impute->vt   = calloc (1, sizeof (bcv_matrix_t)))
         && (impute->work = malloc (work_size)))
@@ -98,7 +100,7 @@ bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n)
         if (mn > 0)
         {
             if ((impute->ud->data = malloc (m * mn * sizeof (double)))
-                && (impute->vt->data = malloc (n * mn * sizeof (double)))
+                && (impute->vt->data = malloc (mn * n * sizeof (double)))
                 && (impute->d        = malloc (mn * sizeof (double))))
             {
                 result = impute;
@@ -150,7 +152,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     bcv_error_t err = 0;
     bcv_index_t m, n, mn, lwork;
     bcv_index_t iter = 0;
-    double rss0, rss1 = 1.0/0.0, delta;
+    double rss0, rss1 = (double) 1.0/0.0, delta;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
@@ -164,9 +166,9 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     impute->ud->m   = m;
     impute->ud->n   = mn;
     impute->ud->lda = m;
-    impute->vt->m   = n;
-    impute->vt->n   = mn;
-    impute->vt->lda = n;
+    impute->vt->m   = mn;
+    impute->vt->n   = n;
+    impute->vt->lda = mn;
     impute->lwork   = lwork;
     
     bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);
@@ -177,7 +179,9 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
         
         err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
         rss1  = impute->rss;
-        delta = abs (rss1 - rss0) / (2.220446e-16 + rss1);
+        delta = fabs (rss1 - rss0) / (2.220446e-16 + rss1);
+        
+        printf ("iter: %d rss: %g  delta: %g\n", iter, rss1, delta);
     }
     while (!err && delta > tol && iter < max_iter);
     
@@ -225,7 +229,7 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute,
                          bcv_matrix_t *xhat,  const bcv_matrix_t *x, 
                          const bcv_index_t *indices, bcv_index_t num_indices)
 {
-    bcv_index_t m, n, i, j, idx;
+    bcv_index_t m, n, i, j, idx, incmu;
     const bcv_index_t *indices_start = indices;
     const bcv_index_t *indices_end   = indices_start + num_indices;
     const bcv_index_t *ptr;
@@ -236,13 +240,14 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute,
     _bcv_matrix_copy (xhat, x);
     _bcv_matrix_set_indices (xhat, 0.0, indices, num_indices);
     
-    m = x->m;
-    n = x->n;
+    m     = x->m;
+    n     = x->n;
+    incmu = impute->vt->lda;
     
     if (m > 0 && n > 0)
     {
         bcv_vector_t one     = { m, impute->ud->data, 1 };
-        bcv_vector_t mu      = { n, impute->vt->data, 1 };
+        bcv_vector_t mu      = { n, impute->vt->data, incmu };
         bcv_index_t *missing = impute->work;
         bcv_index_t count;
 
@@ -256,11 +261,11 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute,
             
             if (count > 0)
             {
-                mu.data[j] = mu.data[j] / count;
+                mu.data[ j*incmu ] = mu.data[ j*incmu ] / count;
             }
             else
             {
-                mu.data[j] = 0.0;
+                mu.data[ j*incmu ] = 0.0;
             }
         }
         
@@ -272,7 +277,7 @@ bcv_svd_col_mean_impute (bcv_svd_impute_t *impute,
             
             assert (0 <= idx && idx < m*n);
             
-            xhat->data[idx] = mu.data[j];
+            xhat->data[idx] = mu.data[ j*incmu ];
         }
     }
 }
@@ -336,28 +341,35 @@ bcv_svd_impute_step (bcv_svd_impute_t *impute,
 bcv_error_t
 bcv_svd_impute_decompose_xhat (bcv_svd_impute_t *impute, bcv_matrix_t *xhat)
 {
+    bcv_error_t info = 0;
     bcv_index_t i, m, n, mn, ldu;
-    bcv_error_t info;
     bcv_vector_t u_i;
     
     assert (impute);
+    _bcv_assert_valid_matrix (xhat);
 
-    info = _bcv_lapack_dgesvd (BCV_MATRIX_SVDJOB_SOME, BCV_MATRIX_SVDJOB_SOME,
-                               xhat, impute->d, impute->ud,
-                               impute->vt, impute->work, impute->lwork);
+    m  = xhat->m;
+    n  = xhat->n;
+    mn = BCV_MIN (m,n);
 
-    m   = xhat->m;
-    n   = xhat->n;
-    mn  = BCV_MIN (m,n);
-    ldu = impute->ud->lda;
-    
-    u_i.n    = m;
-    u_i.data = impute->ud->data;
-    u_i.inc  = 1;
-    
-    for (i = 0; i < mn; i++, u_i.data += ldu)
+    if (mn > 0)
     {
-        _bcv_blas_dscal (impute->d[i], &u_i);
+        _bcv_assert_valid_matrix (impute->ud);
+
+        info = _bcv_lapack_dgesvd (BCV_MATRIX_SVDJOB_SOME, BCV_MATRIX_SVDJOB_SOME,
+                                   xhat, impute->d, impute->ud,
+                                   impute->vt, impute->work, impute->lwork);
+
+        u_i.n    = m;
+        u_i.data = impute->ud->data;
+        u_i.inc  = 1;
+    
+        ldu = impute->ud->lda;
+    
+        for (i = 0; i < mn; i++, u_i.data += ldu)
+        {
+            _bcv_blas_dscal (impute->d[i], &u_i);
+        }
     }
     
     return info;
@@ -374,7 +386,7 @@ bcv_svd_impute_get_svd (const bcv_svd_impute_t *impute, bcv_matrix_t *udvt)
     
     k = impute->k;
     
-    assert (0 <= k && k < BCV_MIN (udvt->m, udvt->n));
+    assert (0 <= k && k <= BCV_MIN (udvt->m, udvt->n));
     
     if (k > 0)
     {
@@ -382,9 +394,9 @@ bcv_svd_impute_get_svd (const bcv_svd_impute_t *impute, bcv_matrix_t *udvt)
         bcv_matrix_t vt_k = *(impute->vt);
     
         ud_k.n = k;
-        vt_k.n = k;
+        vt_k.m = k;
     
-        _bcv_blas_dgemm (BCV_MATRIX_NOTRANS, BCV_MATRIX_TRANS,  
+        _bcv_blas_dgemm (BCV_MATRIX_NOTRANS, BCV_MATRIX_NOTRANS,  
                          1.0, &ud_k, &vt_k, 0.0, udvt);
     }
     else
@@ -408,7 +420,7 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
     
     _bcv_assert_valid_matrix (xhat);
     _bcv_assert_valid_matrix (x);
-    assert (indices);
+    assert (indices || num_indices == 0);
     assert (num_indices >= 0);
 
     m      = x->m;
@@ -438,7 +450,7 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
         }
         else
         {
-            assert (0 <= *indices && *indices < m * n);
+            assert (0 <= *indices && *indices < idx_end);
             assert (*indices >= next_miss);
             
             next_miss = *indices;
@@ -494,16 +506,12 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
         }
         
         /* step over the missing element */
-        idx++; 
+        if (idx != idx_end)
+            idx++; 
     }
     
-    if (m > 0 && n > 0)
-    {
-        assert (idx == idx_end + 1);
-        assert (num_indices == 0);
-        assert (col_start == idx_end - m);
-        assert (col_end == idx_end);
-    }
+    assert (idx == idx_end);
+    assert (num_indices == 0);
     
     return rss;
 }

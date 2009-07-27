@@ -6,8 +6,8 @@ svd.impute.check <- function( impute ) {
         p  <- ncol( x )
         np <- min( n, p )
     
-        if( !is.numeric( x ) )
-            stop( "'x' must be a numeric type, not '", class( x ), "'." )
+        if( is.complex( x ) )
+            stop( "'x' cannot be complex." )
         if( !all( is.finite( x ) | is.na( x ) ) )
             stop( "'x' cannot contain any infinities or NaNs." )
         if( !( k >= 0 ) )
@@ -19,6 +19,8 @@ svd.impute.check <- function( impute ) {
         if( !( maxiter > 0 ) )
             stop( "'maxiter' must be a positive value, not '", 
                   maxiter, "'." )
+    
+        storage.mode( x ) <- "double"
     
         res <- impute( x, k, tol, maxiter )
         
@@ -78,6 +80,8 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
         iter  <- iter + 1
         xhat0 <- xhat1
         rss0  <- rss1
+        
+        cat( "iter: ", iter, " rss: ", rss0, "delta: ", delta, "\n", sep='')
     }
         
     x[ missing ] <- xhat0[ missing ]
@@ -88,7 +92,7 @@ svd.impute.R <- svd.impute.check( svd.impute.R.unchecked )
 
 svd.impute.C.unchecked <- function( x, k, tol, maxiter )
 {
-    storage.mode( x ) <- "double"
+    
     
     res <- .Call( "R_svd_impute", x, k, tol, maxiter )
     names( res ) <- c("x", "rss", "iter")

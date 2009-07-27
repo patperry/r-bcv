@@ -21,7 +21,7 @@ SEXP
 R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
 {
     bcv_index_t m, n, k, maxiter, num_indices, iter;
-    bcv_index_t *indices;
+    bcv_index_t *indices = NULL;
     bcv_svd_impute_t *impute;
     bcv_error_t err;
     double tol, rss;
@@ -39,9 +39,12 @@ R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
     bcv_matrix_t xhat = { m, n, NUMERIC_POINTER (xhatxhat), BCV_MAX (m,1) };
 
     num_indices = bcv_count_missing (&x);
-    indices     = (void *) R_alloc (num_indices, sizeof (bcv_index_t));
-    bcv_find_missing (&x, indices);
-
+    if (num_indices > 0)
+    {
+        indices = (void *) R_alloc (num_indices, sizeof (bcv_index_t));
+        bcv_find_missing (&x, indices);
+    }
+        
     impute = bcv_svd_impute_alloc (m, n);
     err    = bcv_svd_impute (impute, &xhat, &x, indices, num_indices, k, tol,
                              maxiter);
@@ -66,7 +69,7 @@ R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
     REAL (rssrss) [0] = rss;
     
     PROTECT (iteriter = allocVector (INTSXP, 1));
-    INTEGER (iteriter) [0] = rss;
+    INTEGER (iteriter) [0] = iter;
 
     PROTECT (res = allocVector (VECSXP, 3));
     SET_VECTOR_ELT (res, 0, xhatxhat);
@@ -91,7 +94,8 @@ bcv_count_missing (const bcv_matrix_t *a)
     data = a->data;
     lda  = a->lda;
     
-    assert (lda == m); /* not implemented for non-contiguous storage */
+    /* not implemented for non-contiguous storage */
+    assert (lda == BCV_MAX (m,1)); 
     
     for (i = 0; i < m*n; i++)
     {
@@ -116,8 +120,9 @@ bcv_find_missing (const bcv_matrix_t *a, bcv_index_t *indices)
     data = a->data;
     lda  = a->lda;
     
-    assert (lda == m); /* not implemented for non-contiguous storage */
-    
+    /* not implemented for non-contiguous storage */
+    assert (lda == BCV_MAX (m,1)); 
+
     for (i = 0; i < m*n; i++)
     {
         if (ISNA (data[i]))

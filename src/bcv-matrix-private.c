@@ -128,7 +128,7 @@ _bcv_matrix_set_indices (bcv_matrix_t *a, double value,
     const bcv_index_t *pidx;
 
     _bcv_assert_valid_matrix (a);
-    assert (indices);
+    assert (indices || num_indices == 0);
     
     m    = a->m;
     n    = a->n;
