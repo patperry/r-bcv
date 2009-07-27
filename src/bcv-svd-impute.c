@@ -1,12 +1,12 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 #include <string.h>
 #include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
 #include "bcv-svd-impute.h"
 
+#include <R_ext/Utils.h>
 
 /*
  * Return the length of the work array needed for the SVD computation
@@ -174,14 +174,14 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);
     do
     {
+        R_CheckUserInterrupt ();
+        
         rss0 = rss1;
         iter++;
         
         err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
         rss1  = impute->rss;
         delta = fabs (rss1 - rss0) / (BCV_DBL_EPSILON + rss1);
-        
-        printf ("iter: %d rss: %g  delta: %g\n", iter, rss1, delta);
     }
     while (!err && delta > tol && iter < max_iter);
     
