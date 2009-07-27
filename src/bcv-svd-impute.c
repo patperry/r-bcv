@@ -162,6 +162,13 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     mn    = BCV_MIN (m,n);
     lwork = bcv_svd_impute_svd_lwork (m, n);
 
+    /* quick return if possible */
+    if (mn == 0) {
+        impute->iter = 0;
+        impute->rss  = 0.0;
+        return 0;
+    }
+
     impute->k       = k;
     impute->ud->m   = m;
     impute->ud->n   = mn;
