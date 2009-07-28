@@ -144,7 +144,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
     bcv_index_t iter = 0;
     double rss0, rss1 = BCV_DBL_POSINF, delta;
     
-    bcv_svd_impute_init (impute, xhat, x, indices, num_indices, k);
+    bcv_svd_impute_init (impute, xhat, x, indices, num_indices);
 
     /* quick return for empty matrices */
     if (x->m == 0 || x->n == 0)
@@ -157,7 +157,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
         rss0 = rss1;
         iter++;
         
-        err   = bcv_svd_impute_step (impute, xhat, x, indices, num_indices);
+        err = bcv_svd_impute_step (impute, xhat, x, indices, num_indices, k);
         rss1  = bcv_svd_impute_get_rss (impute);
         delta = fabs (rss1 - rss0) / (BCV_DBL_EPSILON + rss1);
     }

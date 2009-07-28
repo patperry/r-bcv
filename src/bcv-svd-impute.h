@@ -22,13 +22,13 @@ bcv_svd_impute_align ();
 void
 bcv_svd_impute_init (bcv_svd_impute_t *impute, 
                      bcv_matrix_t *xhat, const bcv_matrix_t *x, 
-                     const bcv_index_t *indices, bcv_index_t num_indices,
-                     bcv_index_t k);
+                     const bcv_index_t *indices, bcv_index_t num_indices);
 
 bcv_error_t
 bcv_svd_impute_step (bcv_svd_impute_t *impute, 
                      bcv_matrix_t *xhat, const bcv_matrix_t *x, 
-                     const bcv_index_t *indices, bcv_index_t num_indices);
+                     const bcv_index_t *indices, bcv_index_t num_indices,
+                     bcv_index_t k);
 
 double
 bcv_svd_impute_get_rss (const bcv_svd_impute_t *impute);

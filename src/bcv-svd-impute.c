@@ -55,8 +55,8 @@ bcv_impute_replace_nonmissing (bcv_matrix_t *xhat,
 struct _bcv_svd_impute
 {
     double rss;
-
     bcv_index_t k;
+
     bcv_matrix_t *ud;
     bcv_matrix_t *vt;
     double *d;
@@ -164,8 +164,7 @@ bcv_svd_impute_free (bcv_svd_impute_t *impute)
 void
 bcv_svd_impute_init (bcv_svd_impute_t *impute, 
                      bcv_matrix_t *xhat, const bcv_matrix_t *x, 
-                     const bcv_index_t *indices, bcv_index_t num_indices,
-                     bcv_index_t k)
+                     const bcv_index_t *indices, bcv_index_t num_indices)
 {
     bcv_index_t m, n, mn, lwork;
     size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
@@ -210,7 +209,7 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
     impute->vt->n   = n;
     impute->vt->lda = mn;
     
-    impute->k     = k;
+    impute->k     = 0;
     impute->rss   = 0.0;
     impute->lwork = lwork;
     
@@ -339,12 +338,17 @@ bcv_matrix_miss_counts (bcv_index_t m, bcv_index_t n,
 bcv_error_t
 bcv_svd_impute_step (bcv_svd_impute_t *impute, 
                      bcv_matrix_t *xhat, const bcv_matrix_t *x,
-                     const bcv_index_t *indices, bcv_index_t num_indices)
+                     const bcv_index_t *indices, bcv_index_t num_indices,
+                     bcv_index_t k)
 {
     bcv_error_t err;
     double rss;
     
-    err = bcv_svd_impute_decompose_xhat (impute, xhat);
+    _bcv_assert_valid_matrix (x);
+    assert (k >= 0 && k <= BCV_MIN (x->m, x->n));
+    
+    impute->k = k;
+    err       = bcv_svd_impute_decompose_xhat (impute, xhat);
     
     if (!err)
     {
