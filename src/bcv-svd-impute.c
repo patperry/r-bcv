@@ -80,44 +80,53 @@ bcv_svd_impute_size (bcv_index_t m, bcv_index_t n)
     total = (sizeof (bcv_svd_impute_t) 
              + (__alignof__ (bcv_matrix_t) - 1) 
              + 2 * sizeof (bcv_matrix_t)
+             + (__alignof__ (double) - 1)
              + (data_align - 1));
 
-    /* space for ud */
-    if (m <= SIZE_MAX / mn
-        && m * mn <= (SIZE_MAX - total) / sizeof (double))
+    if (mn > 0)
     {
-        total +=  m * mn * sizeof (double);
-        
-        /* space for vt */
-        if (mn <= SIZE_MAX / n
-            && mn * n <= (SIZE_MAX - total) / sizeof (double))
+        /* space for ud */
+        if (m <= SIZE_MAX / mn
+            && m * mn <= (SIZE_MAX - total) / sizeof (double))
         {
-            total += mn * n * sizeof (double);
+            total +=  m * mn * sizeof (double);
         
-            /* space for d */
-            if (mn <= (SIZE_MAX - total) / sizeof (double))
+            /* space for vt */
+            if (mn <= SIZE_MAX / n
+                && mn * n <= (SIZE_MAX - total) / sizeof (double))
             {
-                total += mn * sizeof (double);
-
-                /* we can re-use the workspace for computing the column
-                 * mean and comuting the column means */
-                lwork = bcv_svd_impute_svd_lwork (m, n);
-                if (n <= SIZE_MAX / sizeof (bcv_index_t)
-                    && lwork > 0
-                    && lwork <= SIZE_MAX / sizeof (double))
+                total += mn * n * sizeof (double);
+        
+                /* space for d */
+                if (mn <= (SIZE_MAX - total) / sizeof (double))
                 {
-                    svd_work_size     = lwork * sizeof (double);
-                    colmean_work_size = n * sizeof (bcv_index_t);
-                    work_size = BCV_MAX (colmean_work_size, svd_work_size);
-                    
-                    if (work_size <= SIZE_MAX - total)
+                    total += mn * sizeof (double);
+
+                    /* we can re-use the workspace for computing the column
+                     * mean and comuting the column means */
+                    lwork = bcv_svd_impute_svd_lwork (m, n);
+                    if (n <= SIZE_MAX / sizeof (bcv_index_t)
+                        && lwork > 0
+                        && lwork <= SIZE_MAX / sizeof (double))
                     {
-                        total += work_size;
-                        result = total;
+                        svd_work_size     = lwork * sizeof (double);
+                        colmean_work_size = n     * sizeof (bcv_index_t);
+                        work_size = BCV_MAX (colmean_work_size, svd_work_size);
+                    
+                        if (work_size <= SIZE_MAX - total)
+                        {
+                            total += work_size;
+                            result = total;
+                        }
                     }
                 }
             }
         }
+    }
+    /* mn == 0 */
+    else
+    {
+        result = total;
     }
     
     return result;
@@ -135,40 +144,10 @@ bcv_svd_impute_t *
 bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n)
 {
     bcv_svd_impute_t *result = NULL;
-    bcv_svd_impute_t *impute = NULL;
-    bcv_index_t mn = BCV_MIN (m,n);
-    bcv_index_t svd_work_size, colmean_work_size, work_size;
-    
-    assert (m >= 0);
-    assert (n >= 0);
-    
-    colmean_work_size = BCV_MAX (n, 1) * sizeof (bcv_index_t);
-    svd_work_size     = bcv_svd_impute_svd_lwork (m, n) * sizeof (double);
-    work_size         = BCV_MAX (colmean_work_size, svd_work_size);
-    
-    if (colmean_work_size > 0 && svd_work_size > 0
-        && (impute       = calloc (1, sizeof (bcv_svd_impute_t)))
-        && (impute->ud   = calloc (1, sizeof (bcv_matrix_t)))
-        && (impute->vt   = calloc (1, sizeof (bcv_matrix_t)))
-        && (impute->work = malloc (work_size)))
-    {    
-        if (mn > 0)
-        {
-            if ((impute->ud->data = malloc (m * mn * sizeof (double)))
-                && (impute->vt->data = malloc (mn * n * sizeof (double)))
-                && (impute->d        = malloc (mn * sizeof (double))))
-            {
-                result = impute;
-            }
-        }
-        else
-        {
-            result = impute;
-        }
-    }
-    
-    if (result == NULL)
-        bcv_svd_impute_free (impute);
+    size_t size = bcv_svd_impute_size (m, n);
+
+    if (size > 0)
+        result = calloc (1, size);
     
     return result;
 }
@@ -177,25 +156,10 @@ bcv_svd_impute_alloc (bcv_index_t m, bcv_index_t n)
 void
 bcv_svd_impute_free (bcv_svd_impute_t *impute)
 {
-    if (impute)
-    {
-        if (impute->ud)
-        {
-            if (impute->ud->data) free (impute->ud->data);
-            free (impute->ud);
-        }
-        if (impute->vt)
-        {
-            if (impute->vt->data) free (impute->vt->data);
-            free (impute->vt);
-        }
-        
-        if (impute->d)    free (impute->d);
-        if (impute->work) free (impute->work);
-        
+    if (impute) 
         free (impute);
-    }
 }
+
 
 void
 bcv_svd_impute_init (bcv_svd_impute_t *impute, 
@@ -204,6 +168,11 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
                      bcv_index_t k)
 {
     bcv_index_t m, n, mn, lwork;
+    size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
+    size_t double_align     = __alignof__ (double);
+    size_t index_align      = __alignof__ (bcv_index_t);
+    size_t data_align       = BCV_MAX (double_align, index_align);
+    void *mem;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
@@ -213,16 +182,37 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
     mn    = BCV_MIN (m,n);
     lwork = bcv_svd_impute_svd_lwork (m, n);
 
-    impute->k       = k;
+    mem = impute; mem += sizeof (bcv_svd_impute_t);
+
+    mem += bcv_matrix_align - 1;
+    mem = mem - ((uintptr_t) mem & (bcv_matrix_align - 1));
+    
+    impute->ud = mem; mem += sizeof (bcv_matrix_t);
+    impute->vt = mem; mem += sizeof (bcv_matrix_t);
+    
+    mem += double_align - 1;
+    mem = mem - ((uintptr_t) mem & (double_align - 1));
+    
+    impute->ud->data = mem; mem += m  * mn * sizeof (double);
+    impute->vt->data = mem; mem += mn * n  * sizeof (double);
+    impute->d        = mem; mem += mn * sizeof (double);
+    
+    mem += data_align - 1;
+    mem = mem - ((uintptr_t) mem & (data_align - 1));
+    
+    impute->work = mem;
+    
     impute->ud->m   = m;
     impute->ud->n   = mn;
     impute->ud->lda = m;
+    
     impute->vt->m   = mn;
     impute->vt->n   = n;
     impute->vt->lda = mn;
-    impute->lwork   = lwork;
     
-    impute->rss = 0.0;
+    impute->k     = k;
+    impute->rss   = 0.0;
+    impute->lwork = lwork;
     
     bcv_svd_col_mean_impute (impute, xhat, x, indices, num_indices);    
 }
