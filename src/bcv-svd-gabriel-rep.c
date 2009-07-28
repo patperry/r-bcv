@@ -46,8 +46,9 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
              + (__alignof__ (double) - 1));
         
     /* space for the M*N data matrix */
-    if (M <= SIZE_MAX / N
-        && M * N <= (SIZE_MAX - total) / sizeof (double))
+    if (N == 0 
+        || (M <= SIZE_MAX / N
+            && M * N <= (SIZE_MAX - total) / sizeof (double)))
     {
         total +=  M * N * sizeof (double);
         
