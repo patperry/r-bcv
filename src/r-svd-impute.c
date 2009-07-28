@@ -2,7 +2,6 @@
  */
  
 #include <assert.h>
-#include <stdio.h>
  
 #include <R.h>
 #include <Rinternals.h>
@@ -29,8 +28,9 @@ R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
 {
     bcv_index_t m, n, k, maxiter, num_indices, iter;
     bcv_index_t *indices = NULL;
-    bcv_svd_impute_t *impute;
+    bcv_svd_impute_t *impute = NULL;
     double tol, rss;
+    size_t impute_size;
     SEXP xhatxhat, dimdim, rssrss, iteriter, res;
 
     m       = INTEGER (getAttrib (xx, R_DimSymbol))[0];
@@ -51,12 +51,16 @@ R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
         bcv_find_missing (&x, indices);
     }
         
-    impute = bcv_svd_impute_alloc (m, n);
+    impute_size = bcv_svd_impute_size (m, n);
+
+    if (!impute_size)
+        error ("could not allocate enough memory to impute missing values"
+               " for a %d-by-%d matrix", m, n);
+
+    impute = (void *) R_alloc (impute_size, 1);
     iter   = bcv_svd_impute (impute, &xhat, &x, indices, num_indices, k, tol,
                              maxiter);
     rss    = bcv_svd_impute_get_rss (impute);
-
-    bcv_svd_impute_free (impute);
 
     PROTECT (dimdim = allocVector (INTSXP, 2));
     INTEGER (dimdim) [0] = m;
