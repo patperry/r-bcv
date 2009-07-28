@@ -94,8 +94,6 @@ svd.impute.R <- svd.impute.check( svd.impute.R.unchecked )
 
 svd.impute.C.unchecked <- function( x, k, tol, maxiter )
 {
-    
-    
     res <- .Call( "R_svd_impute", x, k, tol, maxiter )
     names( res ) <- c("x", "rss", "iter")
     res
