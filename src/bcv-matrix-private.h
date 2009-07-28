@@ -169,6 +169,20 @@ _bcv_lapack_dgesvd_work_len (bcv_matrix_svdjob_t jobu,
                              bcv_matrix_svdjob_t jobvt, bcv_index_t m,
                              bcv_index_t n);
 
+bcv_error_t
+_bcv_lapack_dgesdd (bcv_matrix_svdjob_t jobz,
+                    bcv_matrix_t *a, double *s, bcv_matrix_t *u,
+                    bcv_matrix_t *vt, double *work, bcv_index_t lwork,
+                    bcv_index_t *iwork);
+
+bcv_index_t
+_bcv_lapack_dgesdd_work_len (bcv_matrix_svdjob_t jobz, 
+                             bcv_index_t m, bcv_index_t n);
+
+bcv_index_t
+_bcv_lapack_dgesdd_iwork_len (bcv_index_t m, bcv_index_t n);
+
+
 void
 _bcv_lapack_dgebrd (bcv_matrix_t *a, double *d, double *e, double *tauq,
                     double *taup, double *work, bcv_index_t lwork);
