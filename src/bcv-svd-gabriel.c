@@ -131,8 +131,8 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     
     if (!error)
     {
-        bcv_index_t max_allowable_rank = bcv_svd_grep_get_max_rank (bcv->rep);
-        assert (0 <= max_rank && max_rank <= max_allowable_rank);
+        assert (0 <= max_rank 
+                && max_rank <= bcv_svd_grep_get_max_rank (bcv->rep));
         
         for (rank = 0; rank < max_rank; rank++)
         {
