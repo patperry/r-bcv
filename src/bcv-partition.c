@@ -123,8 +123,8 @@ bcv_partition_get_set (const bcv_partition_t *part, bcv_index_t i,
 
     assert (sets || n == 0);
     assert (set);
-    
-    for (idx = 0; idx < n; idx++);
+
+    for (idx = 0; idx < n; idx++)
     {
         if (sets[idx] == i)
         {
