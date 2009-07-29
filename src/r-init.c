@@ -10,7 +10,7 @@
 static R_CallMethodDef callMethods[] = {
     { "R_svd_impute",      (DL_FUNC) &R_svd_impute,      4 },
     { "R_bcv_svd_gabriel", (DL_FUNC) &R_bcv_svd_gabriel, 6 },
-    { "R_bcv_svd_wold",    (DL_FUNC) &R_bcv_svd_gabriel, 6 },
+    { "R_bcv_svd_wold",    (DL_FUNC) &R_bcv_svd_wold,    6 },
     { NULL,                NULL,                         0 }
 };
 

@@ -21,7 +21,7 @@ cv.svd.wold.check <- function( cv.svd ) {
             warning("k has been set to ", k)
     
         sets <- choose.sets( n*p, k )
-        cv   <- cv.svd ( x, k, maxrank, tol, maxiter, sets )
+        cv   <- cv.svd( x, k, maxrank, tol, maxiter, sets )
         list( k=k, maxrank=maxrank, cv=cv, sets=sets )
     }
 }
@@ -50,10 +50,6 @@ cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
 cv.svd.wold.R <- cv.svd.wold.check( cv.svd.wold.R.unchecked )
 
 cv.svd.wold.C.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
-    n    <- nrow( x )
-    p    <- ncol( x )
-    sets <- choose.sets( n*p, k )
-    
     res <- .Call( "R_bcv_svd_wold", x, k, maxrank, tol, maxiter, 
                   as.integer( sets-1 ) )    
     res

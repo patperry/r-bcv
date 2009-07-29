@@ -100,19 +100,17 @@ bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
     holdout.indices     = bcv->holdout;
     holdout.num_indices = bcv_partition_get_set (bcv->part, i, 
                                                  holdout.indices);
-    
-    bcv_svd_wrep_init (bcv->rep, holdout, bcv->x);
 
-    for (rank = 0; rank < max_rank; rank++)
+    for (rank = 0; rank <= max_rank; rank++)
     {
         bcv_index_t iter = 0;
         double rss0, rss1 = BCV_DBL_POSINF, delta = BCV_DBL_POSINF;
 
+        bcv_svd_wrep_init (bcv->rep, holdout, bcv->x);
+
         for (iter = 0; !err && iter < max_iter && !(delta <= tol); iter++)
         {
-            rss0 = rss1;
-            iter++;
-            
+            rss0  = rss1;
             err   = bcv_svd_wrep_impute_step (bcv->rep, rank, &rss1);
             delta = fabs (rss1 - rss0) / (BCV_DBL_EPSILON + rss1);
         }

@@ -87,7 +87,7 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
         bcv->xhat->n   = n;
         bcv->xhat->lda = m;
         
-        bcv-> x      = x;
+        bcv->x       = x;
         bcv->holdout = holdout;
         
         bcv_svd_impute_init (bcv->impute, bcv->xhat, x, 
