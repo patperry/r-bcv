@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
+#include "bcv-align-private.h"
 #include "bcv-partition.h"
 
 
@@ -39,7 +40,7 @@ bcv_partition_size (bcv_index_t n)
 size_t
 bcv_partition_align ()
 {
-    return __alignof__ (bcv_partition_t);
+    return _bcv_alignof (bcv_partition_t);
 }
 
 

@@ -1,5 +1,6 @@
 
 #include <math.h>
+#include "bcv-align-private.h"
 #include "bcv-svd-wold.h"
 #include "bcv-svd-wold-rep.h"
 
@@ -45,7 +46,7 @@ bcv_svd_wold_size (bcv_index_t M, bcv_index_t N)
 size_t
 bcv_svd_wold_align ()
 {
-    size_t result = __alignof__ (bcv_svd_wold_t);
+    size_t result = _bcv_alignof (bcv_svd_wold_t);
     
     return result;
 }

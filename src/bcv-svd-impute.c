@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
+#include "bcv-align-private.h"
 #include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
 #include "bcv-svd-impute.h"
@@ -81,10 +82,10 @@ bcv_svd_impute_size (bcv_index_t m, bcv_index_t n)
     
     /* space for the bcv_svd_impute_t and ud, vt */
     total = (sizeof (bcv_svd_impute_t) 
-             + (__alignof__ (bcv_matrix_t) - 1) 
+             + (_bcv_alignof (bcv_matrix_t) - 1) 
              + 2 * sizeof (bcv_matrix_t)
-             + (__alignof__ (double) - 1)
-             + (__alignof__ (bcv_index_t) - 1));
+             + (_bcv_alignof (double) - 1)
+             + (_bcv_alignof (bcv_index_t) - 1));
 
     if (mn > 0)
     {
@@ -136,7 +137,7 @@ bcv_svd_impute_size (bcv_index_t m, bcv_index_t n)
 size_t
 bcv_svd_impute_align ()
 {
-    return __alignof__ (bcv_svd_impute_t);
+    return _bcv_alignof (bcv_svd_impute_t);
 }
 
 
@@ -167,9 +168,9 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
                      const bcv_index_t *indices, bcv_index_t num_indices)
 {
     bcv_index_t m, n, mn, lwork, liwork;
-    size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
-    size_t double_align     = __alignof__ (double);
-    size_t index_align      = __alignof__ (bcv_index_t);
+    size_t bcv_matrix_align = _bcv_alignof (bcv_matrix_t);
+    size_t double_align     = _bcv_alignof (double);
+    size_t index_align      = _bcv_alignof (bcv_index_t);
     void *mem;
     
     assert (impute);
@@ -183,22 +184,17 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
 
     mem = impute; mem += sizeof (bcv_svd_impute_t);
 
-    mem += bcv_matrix_align - 1;
-    mem = mem - ((uintptr_t) mem & (bcv_matrix_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, bcv_matrix_align);
     impute->ud = mem; mem += sizeof (bcv_matrix_t);
     impute->vt = mem; mem += sizeof (bcv_matrix_t);
     
-    mem += double_align - 1;
-    mem = mem - ((uintptr_t) mem & (double_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, double_align);
     impute->ud->data = mem; mem += m  * mn * sizeof (double);
     impute->vt->data = mem; mem += mn * n  * sizeof (double);
     impute->d        = mem; mem += mn * sizeof (double);
     impute->work     = mem; mem += lwork * sizeof (double);
 
-    mem += index_align - 1;
-    mem = mem - ((uintptr_t) mem & (index_align - 1));
+    mem = BCV_ALIGN_PTR (mem, index_align);
     impute->iwork = mem; mem += liwork * sizeof (bcv_index_t);
     
     impute->ud->m   = m;

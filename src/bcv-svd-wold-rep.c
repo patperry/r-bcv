@@ -3,6 +3,7 @@
 #include <math.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "bcv-align-private.h"
 #include "bcv-svd-impute.h"
 #include "bcv-svd-wold-rep.h"
 
@@ -35,9 +36,9 @@ bcv_svd_wrep_size (bcv_index_t M, bcv_index_t N)
     size_t result = 0, total, impute_size;
     
     total = (sizeof (bcv_svd_wrep_t)
-             + (__alignof__ (bcv_matrix_t) - 1) 
+             + (_bcv_alignof (bcv_matrix_t) - 1) 
              + sizeof (bcv_matrix_t)
-             + (__alignof__ (double) - 1)
+             + (_bcv_alignof (double) - 1)
              + (bcv_svd_impute_align () - 1));
              
     /* space for xhat */
@@ -64,7 +65,7 @@ bcv_svd_wrep_size (bcv_index_t M, bcv_index_t N)
 size_t
 bcv_svd_wrep_align ()
 {
-    size_t result = __alignof__ (bcv_svd_wrep_t);
+    size_t result = _bcv_alignof (bcv_svd_wrep_t);
     
     return result;
 }
@@ -83,9 +84,9 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
 {
     bcv_index_t m, n;
     void *mem;
-    size_t matrix_align = __alignof__ (bcv_matrix_t);
+    size_t matrix_align = _bcv_alignof (bcv_matrix_t);
     size_t impute_align = bcv_svd_impute_align ();
-    size_t double_align     = __alignof__ (double);
+    size_t double_align = _bcv_alignof (double);
     
     assert (bcv);
     _bcv_assert_valid_matrix (x);
@@ -96,19 +97,13 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
     
     mem = bcv; mem += sizeof (bcv_svd_wrep_t);
     
-    mem += matrix_align - 1;
-    mem = mem - ((uintptr_t) mem & (matrix_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, matrix_align);
     bcv->xhat = mem; mem += sizeof (bcv_matrix_t);
 
-    mem += double_align - 1;
-    mem = mem - ((uintptr_t) mem & (double_align - 1));
-
+    mem = BCV_ALIGN_PTR (mem, double_align);
     bcv->xhat->data = mem; mem += m * n * sizeof (double);
     
-    mem += impute_align;
-    mem = mem - ((uintptr_t) mem & (impute_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, impute_align);
     bcv->impute = mem;
     
     bcv->xhat->m   = m;

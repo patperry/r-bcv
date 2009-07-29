@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include "bcv-align-private.h"
 #include "bcv-partition.h"
 #include "bcv-svd-gabriel-rep.h"
 #include "bcv-svd-gabriel.h"
@@ -28,7 +29,7 @@ bcv_svd_gabriel_size (bcv_gabriel_holdin_t max_holdin, bcv_index_t M,
     size_t total;
     
     total = (sizeof (bcv_svd_gabriel_t) 
-             + (__alignof__ (bcv_index_t) - 1)
+             + (_bcv_alignof (bcv_index_t) - 1)
              + (rep_align - 1));
     
     if (M <= (SIZE_MAX - total) / sizeof (bcv_index_t))
@@ -55,7 +56,7 @@ bcv_svd_gabriel_size (bcv_gabriel_holdin_t max_holdin, bcv_index_t M,
 size_t
 bcv_svd_gabriel_align ()
 {
-    return __alignof__ (bcv_svd_gabriel_t);
+    return _bcv_alignof (bcv_svd_gabriel_t);
 }
 
 
@@ -87,7 +88,7 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
                       const bcv_partition_t *cols)
 {
     void *mem = bcv; mem += sizeof (bcv_svd_gabriel_t);
-    size_t bcv_index_align = __alignof__ (bcv_index_t);
+    size_t bcv_index_align = _bcv_alignof (bcv_index_t);
     size_t rep_align       = bcv_svd_grep_align ();
     
     assert (bcv);
@@ -97,15 +98,11 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
     bcv->row_part = rows;
     bcv->col_part = cols;
     
-    mem += bcv_index_align - 1;
-    mem = mem - ((uintptr_t) mem & (bcv_index_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, bcv_index_align);
     bcv->row_perm = mem; mem += (x->m) * sizeof (bcv_index_t);
     bcv->col_perm = mem; mem += (x->n) * sizeof (bcv_index_t);
     
-    mem += rep_align - 1;
-    mem = mem - ((uintptr_t) mem & (rep_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, rep_align);
     bcv->rep = mem;
 }
 

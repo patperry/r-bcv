@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdint.h>
 #include <strings.h>
+#include "bcv-align-private.h"
 #include "bcv-svd-gabriel-rep.h"
 #include "bcv-matrix-private.h"
 
@@ -41,9 +42,9 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
     
     /* space for the bcv_svd_grep_t and x11, x12, x21, x22 */
     total = (sizeof (bcv_svd_grep_t) 
-             + (__alignof__ (bcv_matrix_t) - 1) 
+             + (_bcv_alignof (bcv_matrix_t) - 1) 
              + 4 * sizeof (bcv_matrix_t)
-             + (__alignof__ (double) - 1));
+             + (_bcv_alignof (double) - 1));
         
     /* space for the M*N data matrix */
     if (N == 0 
@@ -91,7 +92,7 @@ bcv_svd_grep_size (bcv_gabriel_holdin_t holdin, bcv_index_t M, bcv_index_t N)
 size_t
 bcv_svd_grep_align ()
 {
-    return __alignof__ (bcv_svd_grep_t);
+    return _bcv_alignof (bcv_svd_grep_t);
 }
 
 
@@ -131,8 +132,8 @@ bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
     bcv_index_t m  = holdin.m;
     bcv_index_t n  = holdin.n;
     bcv_index_t mn = BCV_MIN (m,n);
-    size_t bcv_matrix_align = __alignof__ (bcv_matrix_t);
-    size_t double_align     = __alignof__ (double);
+    size_t matrix_align = _bcv_alignof (bcv_matrix_t);
+    size_t double_align = _bcv_alignof (double);
     void *mem;
     
     assert (bcv);
@@ -140,17 +141,13 @@ bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
     
     mem            = bcv; mem += sizeof (bcv_svd_grep_t);
     
-    mem += bcv_matrix_align - 1;
-    mem = mem - ((uintptr_t) mem & (bcv_matrix_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, matrix_align);
     bcv->x11       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x21       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x12       = mem; mem += sizeof (bcv_matrix_t);
     bcv->x22       = mem; mem += sizeof (bcv_matrix_t);
     
-    mem += double_align - 1;
-    mem = mem - ((uintptr_t) mem & (double_align - 1));
-    
+    mem = BCV_ALIGN_PTR (mem, double_align);
     bcv->x11->data = mem; mem += M * N * sizeof (double);
     bcv->d         = mem; mem += mn * sizeof (double);
     bcv->work      = mem;
