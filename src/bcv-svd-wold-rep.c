@@ -1,6 +1,7 @@
 
 #include <assert.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include "bcv-svd-impute.h"
 #include "bcv-svd-wold-rep.h"
@@ -19,8 +20,10 @@ bcv_svd_wrep_t *
 bcv_svd_wrep_alloc (bcv_index_t M, bcv_index_t N)
 {
     bcv_svd_wrep_t *result = NULL;
-    
-    result = calloc (1, sizeof (bcv_svd_wrep_t));
+    size_t size = bcv_svd_wrep_size (M, N);
+
+    if (size)
+        result = malloc (size);
     
     return result;
 }
@@ -29,7 +32,30 @@ bcv_svd_wrep_alloc (bcv_index_t M, bcv_index_t N)
 size_t
 bcv_svd_wrep_size (bcv_index_t M, bcv_index_t N)
 {
-    size_t result = 0;
+    size_t result = 0, total, impute_size;
+    
+    total = (sizeof (bcv_svd_wrep_t)
+             + (__alignof__ (bcv_matrix_t) - 1) 
+             + sizeof (bcv_matrix_t)
+             + (__alignof__ (double) - 1)
+             + (bcv_svd_impute_align () - 1));
+             
+    /* space for xhat */
+    if (N == 0
+        || (M <= SIZE_MAX / N
+            && M * N <= (SIZE_MAX - total) / sizeof (double)))
+    {
+        total += M * N * sizeof (double);
+        
+        /* space for the impute workspace */
+        impute_size = bcv_svd_impute_size (M, N);
+        if (impute_size > 0 &&
+            impute_size <= SIZE_MAX - total)
+        {
+            total += impute_size;
+            result = total;
+        }
+    }
     
     return result;
 }
@@ -48,20 +74,7 @@ void
 bcv_svd_wrep_free (bcv_svd_wrep_t *bcv)
 {
     if (bcv)
-    {
-        if (bcv->impute)
-            bcv_svd_impute_free (bcv->impute);
-            
-        if (bcv->xhat)
-        {
-            if (bcv->xhat->data)
-                free (bcv->xhat->data);
-                
-            free (bcv->xhat);
-        }
-        
         free (bcv);
-    }
 }
 
 void
@@ -69,32 +82,44 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
                    const bcv_matrix_t *x)
 {
     bcv_index_t m, n;
+    void *mem;
+    size_t matrix_align = __alignof__ (bcv_matrix_t);
+    size_t impute_align = bcv_svd_impute_align ();
+    size_t double_align     = __alignof__ (double);
     
     assert (bcv);
     _bcv_assert_valid_matrix (x);
     
     m = x->m;
     n = x->n;
-
     _bcv_assert_valid_wold_holdout (&holdout, m, n);
     
+    mem = bcv; mem += sizeof (bcv_svd_wrep_t);
     
-    if ((bcv->xhat || (bcv->xhat = calloc (1, sizeof (bcv_matrix_t))))
-        && (bcv->xhat->data 
-             || (bcv->xhat->data = malloc (m * n * sizeof (double))))
-        && (bcv->impute
-            || (bcv->impute = bcv_svd_impute_alloc (m, n))))
-    {
-        bcv->xhat->m   = m;
-        bcv->xhat->n   = n;
-        bcv->xhat->lda = m;
-        
-        bcv->x       = x;
-        bcv->holdout = holdout;
-        
-        bcv_svd_impute_init (bcv->impute, bcv->xhat, x, 
-                             holdout.indices, holdout.num_indices);
-    }
+    mem += matrix_align - 1;
+    mem = mem - ((uintptr_t) mem & (matrix_align - 1));
+    
+    bcv->xhat = mem; mem += sizeof (bcv_matrix_t);
+
+    mem += double_align - 1;
+    mem = mem - ((uintptr_t) mem & (double_align - 1));
+
+    bcv->xhat->data = mem; mem += m * n * sizeof (double);
+    
+    mem += impute_align;
+    mem = mem - ((uintptr_t) mem & (impute_align - 1));
+    
+    bcv->impute = mem;
+    
+    bcv->xhat->m   = m;
+    bcv->xhat->n   = n;
+    bcv->xhat->lda = m;
+    
+    bcv->x       = x;
+    bcv->holdout = holdout;
+    
+    bcv_svd_impute_init (bcv->impute, bcv->xhat, x, 
+                         holdout.indices, holdout.num_indices);
 }
 
 
