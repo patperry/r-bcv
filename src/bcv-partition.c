@@ -108,6 +108,61 @@ bcv_partition_get_perm (const bcv_partition_t *part, bcv_index_t part_index,
     return m;
 }
 
+
+bcv_index_t
+bcv_partition_get_set (const bcv_partition_t *part, bcv_index_t i,
+                       bcv_index_t *set)
+{
+    bcv_index_t set_size = 0;
+    bcv_index_t n, idx;
+    bcv_index_t *sets;
+    
+    assert (part);
+    n    = part->n;
+    sets = part->sets;
+
+    assert (sets || n == 0);
+    assert (set);
+    
+    for (idx = 0; idx < n; idx++);
+    {
+        if (sets[idx] == i)
+        {
+            set[set_size++] = idx;
+        }
+    }
+    
+    return set_size;
+}
+
+
+bcv_index_t
+bcv_partition_get_size (const bcv_partition_t *part, bcv_index_t i)
+{
+    bcv_index_t size = 0, n, k;
+    bcv_index_t *sets, *sets_begin, *sets_end;
+    
+    assert (part);
+    n = part->n;
+    k = part->k;
+    sets_begin = part->sets;
+    sets_end   = sets_begin + n;
+
+    assert (0 <= i && i < k);
+    assert (sets_begin || n == 0);
+
+    for (sets = sets_begin; sets < sets_end; sets++)
+    {
+        if (*sets == i)
+        {
+            size++;
+        }
+    }
+    
+    return size;
+}
+
+
 void
 bcv_partition_get_sizes (const bcv_partition_t *part,
                          bcv_index_t *sizes)

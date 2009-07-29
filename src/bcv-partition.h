@@ -83,7 +83,7 @@ bcv_partition_init (bcv_partition_t *part, bcv_index_t n, bcv_index_t k,
 
 /**
  * bcv_partition_get_perm:
- * @part: a partion of [0..n) into k sets
+ * @part: a partition of [0..n) into k sets
  * @i: the partition set index, a number in the range [0..k)
  * @p: an array of length n.
  *
@@ -102,6 +102,28 @@ bcv_index_t
 bcv_partition_get_perm (const bcv_partition_t *part, bcv_index_t i,
                         bcv_index_t *p);
 
+/**
+ * bcv_partition_get_set:
+ * @part: a partition of [0..n) into k sets
+ * @i: the partition set index, a number in the range [0..k)
+ * @set: an array of length equal to the size of the @i-th set.
+ *
+ * Set the elements of @set to contain the elements of the @i-th partition
+ * set, sorted in ascending order.  Return the size of the set.
+ */
+bcv_index_t
+bcv_partition_get_set (const bcv_partition_t *part, bcv_index_t i,
+                       bcv_index_t *set);
+
+/**
+ * bcv_partition_get_size:
+ * @part: a partition of [0..n) into k sets
+ * @i: the partition set index, a number in the range [0..k)
+ *
+ * Return the size (in elements) of the @ith set in the partition.
+ */
+bcv_index_t
+bcv_partition_get_size (const bcv_partition_t *part, bcv_index_t i);
 
 /**
  * bcv_partition_get_sizes:
