@@ -55,6 +55,8 @@ R_bcv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol,
         rss += maxrank + 1;
     }
     
+    bcv_svd_wold_free (wold);
+    
     UNPROTECT (2);
     return rssrss;
 }

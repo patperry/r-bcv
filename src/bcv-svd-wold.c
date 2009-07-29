@@ -66,7 +66,8 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
     
     assert (part->n == m*n);
     
-    bcv->rep  = bcv_svd_wrep_alloc (m, n);
+    if (!(bcv->rep))
+        bcv->rep  = bcv_svd_wrep_alloc (m, n);
     bcv->x    = x;
     bcv->part = part;
 }
@@ -79,6 +80,9 @@ bcv_svd_wold_free (bcv_svd_wold_t *bcv)
     {
         if (bcv->rep)
             bcv_svd_wrep_free (bcv->rep);
+        
+        if (bcv->holdout)
+            free (bcv->holdout);
         
         free (bcv);
     }

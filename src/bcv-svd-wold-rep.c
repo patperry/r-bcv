@@ -79,9 +79,11 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
     _bcv_assert_valid_wold_holdout (&holdout, m, n);
     
     
-    if ((bcv->xhat = calloc (1, sizeof (bcv_matrix_t)))
-        && (bcv->xhat->data = malloc (m * n * sizeof (double)))
-        && (bcv->impute = bcv_svd_impute_alloc (m, n)))
+    if ((bcv->xhat || (bcv->xhat = calloc (1, sizeof (bcv_matrix_t))))
+        && (bcv->xhat->data 
+             || (bcv->xhat->data = malloc (m * n * sizeof (double))))
+        && (bcv->impute
+            || (bcv->impute = bcv_svd_impute_alloc (m, n))))
     {
         bcv->xhat->m   = m;
         bcv->xhat->n   = n;
