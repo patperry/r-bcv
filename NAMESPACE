@@ -1,2 +1,2 @@
 useDynLib(bcv)
-export(cv.svd.gabriel, svd.impute)
+export(cv.svd.gabriel, cv.svd.wold, svd.impute)

@@ -64,6 +64,8 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
     m = x->m;
     n = x->n;
     
+    assert (part->n == m*n);
+    
     bcv->rep  = bcv_svd_wrep_alloc (m, n);
     bcv->x    = x;
     bcv->part = part;
