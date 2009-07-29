@@ -18,27 +18,40 @@ bcv_svd_wold_t *
 bcv_svd_wold_alloc (bcv_index_t max_holdout, bcv_index_t M, bcv_index_t N)
 {
     bcv_svd_wold_t *result = NULL;
-    size_t size = bcv_svd_wold_size (M, N);
+    size_t size = bcv_svd_wold_size (max_holdout, M, N);
     
     if (size > 0)
-    {
-        if (!((result = calloc (1, size))
-              && (result->holdout = 
-                      malloc (max_holdout * sizeof (bcv_index_t)))))
-        {
-            bcv_svd_wold_free (result);
-            result = NULL;
-        }
-    }
+        result = malloc (size);
         
     return result;
 }
 
 
 size_t
-bcv_svd_wold_size (bcv_index_t M, bcv_index_t N)
+bcv_svd_wold_size (bcv_index_t max_holdout, bcv_index_t M, bcv_index_t N)
 {
-    size_t result = sizeof (bcv_svd_wold_t);
+    size_t result = 0, total;
+    size_t wrep_size;
+    
+    total = (sizeof (bcv_svd_wold_t)
+             + (bcv_svd_wrep_align() - 1)
+             + (_bcv_alignof (bcv_index_t) - 1));
+    
+    /* space for the indices in the holdout set */
+    if (max_holdout <= (SIZE_MAX - total) / sizeof (bcv_index_t))
+    {
+        total += max_holdout * sizeof (bcv_index_t);
+        
+        /* space for the replicate */
+        wrep_size = bcv_svd_wrep_size (M, N);
+        if (wrep_size > 0
+            && wrep_size <= SIZE_MAX - total)
+        {
+            total += wrep_size;
+            result = total;
+        }
+        
+    }
     
     return result;
 }
@@ -57,6 +70,9 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
                    const bcv_partition_t *part)
 {
     bcv_index_t m, n;
+    size_t wrep_align  = bcv_svd_wrep_align ();
+    size_t index_align = _bcv_alignof (bcv_index_t);
+    void *mem;
     
     assert (bcv);
     _bcv_assert_valid_matrix (x);
@@ -67,8 +83,14 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
     
     assert (part->n == m*n);
     
-    if (!(bcv->rep))
-        bcv->rep  = bcv_svd_wrep_alloc (m, n);
+    mem = bcv; mem += sizeof (bcv_svd_wold_t);
+    
+    mem = BCV_ALIGN_PTR (mem, wrep_align);
+    bcv->rep = mem; mem += bcv_svd_wrep_size (m, n);
+    
+    mem = BCV_ALIGN_PTR (mem, index_align);
+    bcv->holdout = mem;
+    
     bcv->x    = x;
     bcv->part = part;
 }
@@ -78,15 +100,7 @@ void
 bcv_svd_wold_free (bcv_svd_wold_t *bcv)
 {
     if (bcv) 
-    {
-        if (bcv->rep)
-            bcv_svd_wrep_free (bcv->rep);
-        
-        if (bcv->holdout)
-            free (bcv->holdout);
-        
         free (bcv);
-    }
 }
 
 
