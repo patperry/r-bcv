@@ -21,7 +21,7 @@ typedef struct _bcv_wold_holdout {
 
 
 bcv_svd_wold_t *
-bcv_svd_wold_alloc (bcv_index_t M, bcv_index_t N);
+bcv_svd_wold_alloc (bcv_index_t max_holdout, bcv_index_t M, bcv_index_t N);
 
 size_t
 bcv_svd_wold_size (bcv_index_t M, bcv_index_t N);
@@ -38,7 +38,8 @@ bcv_svd_wold_free (bcv_svd_wold_t *bcv);
 
 bcv_error_t
 bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
-                      double *rss, bcv_index_t max_rank);
+                      double *rss, bcv_index_t max_rank,
+                      double tol, bcv_index_t max_iter);
 
 bcv_index_t
 bcv_svd_wold_get_max_rank (const bcv_svd_wold_t *bcv, bcv_index_t i);
