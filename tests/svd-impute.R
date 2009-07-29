@@ -1,5 +1,5 @@
 
-require( bcv, "~/lib/R" )
+require( bcv )
 
 svd.impute.R <- get( "svd.impute.R", 
                      env=parent.env( environment( svd.impute ) ) )
