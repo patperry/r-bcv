@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include "bcv-partition.h"
 
 
@@ -105,4 +106,32 @@ bcv_partition_get_perm (const bcv_partition_t *part, bcv_index_t part_index,
     }
     
     return m;
+}
+
+void
+bcv_partition_get_sizes (const bcv_partition_t *part,
+                         bcv_index_t *sizes)
+{
+    bcv_index_t k, n, i;
+    bcv_index_t *sets, *sets_begin, *sets_end;
+    
+    assert (part);
+    n = part->n;
+    k = part->k;
+    sets_begin = part->sets;
+    sets_end   = sets_begin + n;
+
+    assert (sets_begin || n == 0);
+    assert (sizes      || k == 0);
+
+    /* initialize sizes to 0 */
+    bzero (sizes, k * sizeof (bcv_index_t));
+    
+    for (sets = sets_begin; sets < sets_end; sets++)
+    {
+        i = *sets;
+        assert (0 <= i && i < k);
+        
+        sizes[i] = sizes[i] + 1;
+    }
 }

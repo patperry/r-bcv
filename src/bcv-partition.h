@@ -102,4 +102,18 @@ bcv_index_t
 bcv_partition_get_perm (const bcv_partition_t *part, bcv_index_t i,
                         bcv_index_t *p);
 
+
+/**
+ * bcv_partition_get_sizes:
+ * @part: a partition of [0..n) into k sets
+ * @sizes: an array of length k.
+ *
+ * For i in [0..k), sets @sizes[i] to be the size of the ith set in
+ * the partition, @part.
+ */
+void
+bcv_partition_get_sizes (const bcv_partition_t *part,
+                         bcv_index_t *sizes);
+
+
 #endif /* _BCV_PARTITION_H */
