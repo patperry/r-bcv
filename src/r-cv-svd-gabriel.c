@@ -1,6 +1,4 @@
-/* driver.c
- */
- 
+
 #include <assert.h>
 #include <string.h>
  
@@ -10,11 +8,11 @@
 #include <R_ext/Utils.h>
 #include "bcv-partition.h"
 #include "bcv-svd-gabriel.h"
-#include "r-bcv-svd-gabriel.h"
+#include "r-cv-svd-gabriel.h"
 
 
 SEXP 
-R_bcv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
+R_cv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 {
     bcv_index_t M, N, K, L, i, j, kmax;
     bcv_error_t bcv_error;

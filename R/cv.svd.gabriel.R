@@ -35,7 +35,7 @@ cv.svd.gabriel <- function(x, krow=2, kcol=2,
     if (!missing(maxrank) && maxrank != maxrank.o)
         warning("maxrank has been set to ", maxrank)
     
-    presst <- .Call( "R_bcv_svd_gabriel", x, krow, kcol, maxrank, 
+    presst <- .Call( "R_cv_svd_gabriel", x, krow, kcol, maxrank, 
                      as.integer( s.r-1 ), as.integer( s.c-1 ) )
     press  <- t(presst)
     colnames( press ) <- 0:maxrank

@@ -56,7 +56,7 @@ cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
 cv.svd.wold.R <- cv.svd.wold.check( cv.svd.wold.R.unchecked )
 
 cv.svd.wold.C.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
-    presst <- .Call( "R_bcv_svd_wold", x, k, maxrank, tol, maxiter, 
+    presst <- .Call( "R_cv_svd_wold", x, k, maxrank, tol, maxiter, 
                      as.integer( sets-1 ) )    
     press  <- t( presst )
     press

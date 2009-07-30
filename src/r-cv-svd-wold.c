@@ -6,12 +6,12 @@
 #include <Rdefines.h>
 #include <R_ext/Utils.h>
 #include "bcv-svd-wold.h"
-#include "r-bcv-svd-wold.h"
+#include "r-cv-svd-wold.h"
 
 
 SEXP 
-R_bcv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol, 
-                SEXP maxitermaxiter, SEXP setssets)
+R_cv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol, 
+               SEXP maxitermaxiter, SEXP setssets)
 {
     bcv_error_t err = 0;
     bcv_index_t m, n, i, k, maxiter, maxrank;
