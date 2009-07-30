@@ -7,8 +7,8 @@ print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
     
     K           <- nrow( press )
     rank        <- seq( from=0, to=maxrank, by=1 )
-    press.mean  <- apply( press, 1, mean )
-    press.se    <- apply( press, 1, sd ) / sqrt( K )
+    press.mean  <- apply( press, 2, mean )
+    press.se    <- apply( press, 2, sd ) / sqrt( K )
     min.rank    <- which.min( press.mean ) - 1
     min.rank.se <- min( which( press.mean 
                                <= press.mean[ min.rank+1 ] 

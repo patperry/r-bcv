@@ -8,8 +8,8 @@ plot.cvsvd <- function( x, errorbars=TRUE,
     
     K           <- nrow( press )
     rank        <- seq( from=0, to=maxrank, by=1 )
-    press.mean  <- apply( press, 1, mean )
-    press.se    <- apply( press, 1, sd ) / sqrt( K )
+    press.mean  <- apply( press, 2, mean )
+    press.se    <- apply( press, 2, sd ) / sqrt( K )
     
     if( !add ) {
         if( errorbars ) {

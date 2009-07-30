@@ -6,7 +6,7 @@ get.x22 <- function( cv, x, i, j ) x[ cv$row == i, cv$col == j ]
 
 check <- function( cv, x )
 {
-    expected <- matrix( 0, cv$maxrank + 1, cv$krow * cv$kcol )
+    expected <- matrix( 0, cv$krow * cv$kcol, cv$maxrank + 1 )
     for( i in 1:cv$krow )
     {
         for( j in 1:cv$kcol )
@@ -21,14 +21,14 @@ check <- function( cv, x )
             x21 <- get.x21( cv, x, i, j )
             x22 <- get.x22( cv, x, i, j )
             
-            col <- i + ( j-1 )*cv$krow
-            expected[ 1, col ] <- sum( x22^2 )
+            row <- i + ( j-1 )*cv$krow
+            expected[ row, 1 ] <- sum( x22^2 )
             for( k in seq_len( cv$maxrank ) )
             {
                 x22.hat <- (     ( x21 %*% v1[,1:k,drop=FALSE] )
                              %*% diag( 1.0 / d[1:k], k, k )
                              %*% ( t( u1[,1:k,drop=FALSE] ) %*% x12 ) )
-                expected[ k + 1, col ] <- sum( ( x22 - x22.hat )^2 )                
+                expected[ row, k + 1 ] <- sum( ( x22 - x22.hat )^2 )                
             }
         }
     }

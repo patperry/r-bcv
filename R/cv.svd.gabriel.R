@@ -1,5 +1,5 @@
 
-cv.svd.gabriel <- function(x, krow, kcol, 
+cv.svd.gabriel <- function(x, krow=2, kcol=2, 
                            maxrank = floor(min(n - n/krow, p - p/kcol))) {
     x <- as.matrix( x )
     n <- nrow(x)
@@ -35,10 +35,13 @@ cv.svd.gabriel <- function(x, krow, kcol,
     if (!missing(maxrank) && maxrank != maxrank.o)
         warning("maxrank has been set to ", maxrank)
     
-    press <- .Call("R_bcv_svd_gabriel", x, krow, kcol, maxrank, 
-                   as.integer( s.r-1 ), as.integer( s.c-1 ))
-    res <- list( call=match.call(), krow=krow, kcol=kcol, maxrank=maxrank, 
-                 press=press, rowsets=s.r, colsets=s.c)
+    presst <- .Call( "R_bcv_svd_gabriel", x, krow, kcol, maxrank, 
+                     as.integer( s.r-1 ), as.integer( s.c-1 ) )
+    press  <- t(presst)
+    colnames( press ) <- 0:maxrank
+    
+    res    <- list( call=match.call(), krow=krow, kcol=kcol, maxrank=maxrank, 
+                    press=press, rowsets=s.r, colsets=s.c)
     class( res ) <- c("cvsvd_gabriel", "cvsvd")
     res
 }
