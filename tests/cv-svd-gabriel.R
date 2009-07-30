@@ -33,7 +33,7 @@ check <- function( cv, x )
         }
     }
     
-    actual <- cv$cv
+    actual <- cv$press
     
     if( !all( abs( ( expected - actual )/expected < 1e-8 ) ) )
     {

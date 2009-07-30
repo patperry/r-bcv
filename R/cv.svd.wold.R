@@ -20,9 +20,12 @@ cv.svd.wold.check <- function( cv.svd ) {
         if (k != k.o) 
             warning("k has been set to ", k)
     
-        sets <- choose.sets( n*p, k )
-        cv   <- cv.svd( x, k, maxrank, tol, maxiter, sets )
-        list( k=k, maxrank=maxrank, cv=cv, sets=sets )
+        sets  <- choose.sets( n*p, k )
+        press <- cv.svd( x, k, maxrank, tol, maxiter, sets )
+        res   <- list( call=match.call(), k=k, maxrank=maxrank, 
+                       press=press, sets=sets )
+        class( res ) <- c("cvsvd_wold", "cvsvd")
+        res
     }
 }
 
