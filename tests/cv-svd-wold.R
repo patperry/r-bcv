@@ -79,7 +79,7 @@ sizes <- function( ntests, each=2 ) {
 }
 
 main <- function () {
-    ntests <- 200
+    ntests <- 100
     s <- sizes( ntests )
     set.seed( 0 )
 
