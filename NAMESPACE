@@ -1,2 +1,8 @@
-useDynLib(bcv)
-export(cv.svd.gabriel, cv.svd.wold, svd.impute, print.cvsvd)
+useDynLib( bcv )
+
+export( cv.svd.gabriel, 
+        cv.svd.wold, 
+        svd.impute, 
+        plot.cvsvd, 
+        print.cvsvd
+      )
