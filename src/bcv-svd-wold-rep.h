@@ -6,6 +6,12 @@
 #include "bcv-svd-wold.h"
 #include "bcv-types.h"
 
+/**
+ * bcv_svd_wrep_t:
+ *
+ * A #bcv_svd_wrep_t provides a workspace for performing a single replicate
+ * of a Wold-style SVD cross-validation.
+ */
 typedef struct _bcv_svd_wrep bcv_svd_wrep_t;
 
 /**

@@ -106,8 +106,8 @@ bcv_svd_wold_free (bcv_svd_wold_t *bcv)
 
 bcv_error_t
 bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
-                      double *rss, bcv_index_t max_rank,
-                      double tol, bcv_index_t max_iter)
+                      double tol, bcv_index_t max_iter,
+                      double *rss, bcv_index_t max_rank)
 {
     bcv_error_t err = 0;
     bcv_index_t rank;
