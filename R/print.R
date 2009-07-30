@@ -1,9 +1,9 @@
 
-print.cvsvd <- function( cv, digits=max(3, getOption("digits") - 3), ... ) {
-    cat( "\nCall:\n", deparse( cv$call ), "\n\n", sep = "" )
+print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
+    cat( "\nCall:\n", deparse( x$call ), "\n\n", sep = "" )
     
-    press   <- cv$press
-    maxrank <- cv$maxrank
+    press   <- x$press
+    maxrank <- x$maxrank
     
     K           <- nrow( press )
     rank        <- seq( from=0, to=maxrank, by=1 )
@@ -51,5 +51,5 @@ print.cvsvd <- function( cv, digits=max(3, getOption("digits") - 3), ... ) {
     
     cat( "\n" )
     
-    invisible( cv )
+    invisible( x )
 }
