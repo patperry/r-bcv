@@ -1,6 +1,3 @@
-/* driver.c
- */
- 
 #include <assert.h>
  
 #include <R.h>
@@ -8,7 +5,7 @@
 #include <Rdefines.h>
 #include <R_ext/Utils.h>
 #include "bcv-svd-impute.h"
-#include "r-svd-impute.h"
+#include "r-impute-svd.h"
 
 static bcv_index_t
 bcv_count_missing (const bcv_matrix_t *a);
@@ -24,7 +21,7 @@ bcv_svd_impute (bcv_svd_impute_t *impute,
 
 
 SEXP 
-R_svd_impute (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
+R_impute_svd (SEXP xx, SEXP kk, SEXP toltol, SEXP maxitermaxiter)
 {
     bcv_index_t m, n, k, maxiter, num_indices, iter;
     bcv_index_t *indices = NULL;

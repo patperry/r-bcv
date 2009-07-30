@@ -1,14 +1,14 @@
 
 require( bcv )
 
-svd.impute.R <- get( "svd.impute.R", 
-                     env=parent.env( environment( svd.impute ) ) )
+impute.svd.R <- get( "impute.svd.R", 
+                     env=parent.env( environment( impute.svd ) ) )
 
 
 check <- function( actual, test ) {
     failed   <- FALSE
     expected <- suppressWarnings( 
-                    svd.impute.R( test$x, test$k, test$tol, test$maxiter ) )
+                    impute.svd.R( test$x, test$k, test$tol, test$maxiter ) )
     
     if( !all( abs( expected$x - actual$x ) 
               < 
@@ -114,7 +114,7 @@ for (size in s)
     test <- rtest( size )
     
     actual <- suppressWarnings( 
-                  svd.impute( test$x, test$k, test$tol, test$maxiter ) )
+                  impute.svd( test$x, test$k, test$tol, test$maxiter ) )
     if( !check( actual, test ) )
         nsuc <- nsuc + 1
 }

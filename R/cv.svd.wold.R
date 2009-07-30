@@ -44,7 +44,7 @@ cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
         
         for( rank in seq( 0, maxrank ) ) {
             xhat <- suppressWarnings(
-                        svd.impute( xtrain, rank, tol, maxiter )$x )
+                        impute.svd( xtrain, rank, tol, maxiter )$x )
                         
             err  <- sum( ( xhat[ test ] - x[ test ] )^2 )
             cv[ j, rank+1 ] <- err

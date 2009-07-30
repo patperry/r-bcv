@@ -2,7 +2,7 @@ useDynLib( bcv )
 
 export( cv.svd.gabriel, 
         cv.svd.wold, 
-        svd.impute, 
+        impute.svd, 
         plot.cvsvd, 
         print.cvsvd
       )

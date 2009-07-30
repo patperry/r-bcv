@@ -5,10 +5,10 @@
 
 #include "r-cv-svd-gabriel.h"
 #include "r-cv-svd-wold.h"
-#include "r-svd-impute.h"
+#include "r-impute-svd.h"
 
 static R_CallMethodDef callMethods[] = {
-    { "R_svd_impute",     (DL_FUNC) &R_svd_impute,     4 },
+    { "R_impute_svd",     (DL_FUNC) &R_impute_svd,     4 },
     { "R_cv_svd_gabriel", (DL_FUNC) &R_cv_svd_gabriel, 6 },
     { "R_cv_svd_wold",    (DL_FUNC) &R_cv_svd_wold,    6 },
     { NULL,               NULL,                        0 }

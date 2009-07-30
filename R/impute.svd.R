@@ -1,5 +1,5 @@
 
-svd.impute.check <- function( impute ) {
+impute.svd.check <- function( impute ) {
     function( x, k=min(n,p), tol=max(n,p)*1e-10, maxiter=100 ) {
         x  <- as.matrix( x )
         n  <- nrow( x )
@@ -46,7 +46,7 @@ impute.colMeans <- function( x ) {
     mu
 }
 
-svd.impute.R.unchecked <- function( x, k, tol, maxiter )
+impute.svd.R.unchecked <- function( x, k, tol, maxiter )
 {
     n <- nrow( x )
     p <- ncol( x )
@@ -90,14 +90,14 @@ svd.impute.R.unchecked <- function( x, k, tol, maxiter )
     
     list( x=x, rss=rss0, iter=iter )
 }
-svd.impute.R <- svd.impute.check( svd.impute.R.unchecked )
+impute.svd.R <- impute.svd.check( impute.svd.R.unchecked )
 
-svd.impute.C.unchecked <- function( x, k, tol, maxiter )
+impute.svd.C.unchecked <- function( x, k, tol, maxiter )
 {
-    res <- .Call( "R_svd_impute", x, k, tol, maxiter )
+    res <- .Call( "R_impute_svd", x, k, tol, maxiter )
     names( res ) <- c("x", "rss", "iter")
     res
 }
-svd.impute.C <- svd.impute.check( svd.impute.C.unchecked )
+impute.svd.C <- impute.svd.check( impute.svd.C.unchecked )
 
-svd.impute <- svd.impute.C
+impute.svd <- impute.svd.C
