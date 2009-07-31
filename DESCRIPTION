@@ -5,8 +5,9 @@ Title:       Bi-Cross-Validation for the SVD
 Author:      Patrick O. Perry
 Maintainer:  Patrick O. Perry <patperry@gmail.com>
 Description: 
-    This package implements Bi-Cross-Validation for the SVD, as described in 
-    Owen & Perry "Bi Cross Validation for the SVD and NMF".  It is a method 
-    for choosing how many terms of an SVD to keep.
+    This package implements methods for choosing the rank of an SVD 
+    approximation via cross validation.  It provides both Gabriel-style 
+    "block" holdouts and Wold-style "speckled" holdouts.  Also included is an 
+    implementation of the SVDImpute algorithm.
 License:     BSD3
 Encoding:    UTF-8
