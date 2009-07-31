@@ -1,6 +1,6 @@
 
 cv.svd.wold.check <- function( cv.svd ) {
-    function( x, k=5, maxrank=min(n,p), tol=max(n,p)*1e-10, maxiter=100 ) {
+    function( x, k=5, maxrank=20, tol=1e-4, maxiter=20 ) {
         x <- as.matrix( x )
         n <- nrow( x )
         p <- ncol( x )
