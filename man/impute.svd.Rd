@@ -1,5 +1,4 @@
 \name{impute.svd}
-\Rdversion{1.0}
 \alias{impute.svd}
 \title{
   Missing value imputation via the SVDImpute algorithm
