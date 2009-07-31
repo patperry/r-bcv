@@ -1,7 +1,7 @@
 Package:     bcv
 Version:     1.0
 Date:        2009-08-15
-Title:       Bi-Cross-Validation for the SVD
+Title:       Cross-Validation for the SVD (Bi-Cross-Validation)
 Author:      Patrick O. Perry
 Maintainer:  Patrick O. Perry <patperry@gmail.com>
 Description: 

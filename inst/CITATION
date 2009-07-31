@@ -1,0 +1,18 @@
+if( !exists("meta") || is.null(meta) )
+    meta <- packageDescription( "bcv" )
+
+citHeader( "To cite package ’bcv’ in publications use:" )
+    
+year <- sub( ".*(2[[:digit:]]{3})-.*", "\\1", meta$Date )
+vers <- paste( "R package version", meta$Version )
+
+citEntry( entry="Manual", 
+          title="bcv: Cross-Validation for the SVD (Bi-Cross-Validation)",
+         author=personList( as.person( "Patrick O. Perry" ) ),
+           year=year, 
+           note=vers, 
+    textVersion=paste( "Patrick O. Perry, ",
+                       "(", year, "). ",
+                       "bcv: Cross-Validation for the SVD (Bi-Cross-Validation). ",
+                       vers, ".", 
+                       sep="" ) ) 

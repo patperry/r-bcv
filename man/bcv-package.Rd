@@ -3,7 +3,7 @@
 \alias{bcv}
 \docType{package}
 \title{
-    Bi-Cross Validation
+    Cross-Validation for the SVD (Bi-Cross-Validation)
 }
 \description{
     This package implements methods for choosing the rank of an SVD 
