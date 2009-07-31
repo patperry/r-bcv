@@ -12,7 +12,7 @@ print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
     min.rank    <- which.min( press.mean ) - 1
     min.rank.se <- min( which( press.mean 
                                <= press.mean[ min.rank+1 ] 
-                                  + press.mean[ min.rank+1 ] ) ) - 1
+                                  + press.se[ min.rank+1 ] ) ) - 1
     
     rank.fmt   <- format( rank )
     rank.width <- max( nchar( rank.fmt[ 1 ] ), nchar( "Rank" ) + 1 )
