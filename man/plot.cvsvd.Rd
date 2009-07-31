@@ -5,10 +5,10 @@
 }
 \description{
   Plot the result of \code{\link{cv.svd.gabriel}} or 
-  \code{link{cv.svd.wold}}, optionally with error bars.
+  \code{\link{cv.svd.wold}}, optionally with error bars.
 }
 \usage{
-  plot(x, errorbars = TRUE, add = FALSE,
+  \method{plot}{cvsvd}(x, errorbars = TRUE, add = FALSE,
        xlab = "Rank", ylab = "Prediction Error", 
        col = "blue", col.errorbars = "gray50", ...)
 }
@@ -21,19 +21,21 @@
   \item{add}{indicates whether or not to add to the current plot.}
   \item{xlab}{the label for the x axis.}
   \item{ylab}{the label for the y axis.}
-  \item{\dots}{additional arguments for \code{\link{plot}}}
+  \item{\dots}{additional arguments for \code{plot}.}
 }
 \details{
   Plot the result of \code{\link{cv.svd.gabriel}} or 
-  \code{link{cv.svd.wold}}.  This plots a the estimated prediction
+  \code{\link{cv.svd.wold}}.  This plots a the estimated prediction
   error as a function of rank, optionally with error bars.
   
-  If \code{add} is TRUE, the current plot is not cleared.
+  If \code{add} is \code{TRUE}, the current plot is not cleared.
 }
 \author{Patrick O. Perry}
 
 \seealso{
-  \code{\link{cv.svd.gabriel}}, \code{link{cv.svd.wold}}
+  \code{\link{cv.svd.gabriel}}, 
+  \code{\link{cv.svd.wold}},
+  \code{\link{print.cvsvd}}
 }
 \examples{
   # generate a rank-2 matrix plus noise
@@ -41,7 +43,7 @@
   u <- matrix( rnorm( n*k ), n, k )
   v <- matrix( rnorm( p*k ), p, k )
   e <- matrix( rnorm( n*p ), n, p )
-  x <- u %*% t(v) + e
+  x <- u \%*\% t(v) + e
   
   # perform 5-fold Wold-style cross-validtion
   cvw <- cv.svd.wold( x, 5, maxrank=10 )

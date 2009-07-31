@@ -40,7 +40,7 @@ print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
         se   <- press.se[ i ]
         cat( sprintf( fmt, rank.fmt[ i ], mean.fmt[ i ], se.fmt[ i ] ) )
         if ( rank == min.rank && rank == min.rank.se ) {
-            cat( " * " )
+            cat( " *+ " )
         } else if ( rank == min.rank ) {
             cat( " * " )
         } else if ( rank == min.rank.se ) {

@@ -95,14 +95,18 @@
   get the best results.
 }
 
-\seealso{\code{\link{impute.svd}}}
+\seealso{
+    \code{\link{impute.svd}}, 
+    \code{\link{plot.cvsvd}},
+    \code{\link{print.cvsvd}}
+}
 \examples{
   # generate a rank-2 matrix plus noise
   n <- 50; p <- 20; k <- 2
   u <- matrix( rnorm( n*k ), n, k )
   v <- matrix( rnorm( p*k ), p, k )
   e <- matrix( rnorm( n*p ), n, p )
-  x <- u %*% t(v) + e
+  x <- u \%*\% t(v) + e
   
   # perform 5-fold Wold-style cross-validtion
   (cvw <- cv.svd.wold( x, 5, maxrank=10 ))

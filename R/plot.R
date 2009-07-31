@@ -1,8 +1,7 @@
 
-plot.cvsvd <- function( x, errorbars=TRUE,
-                        col="blue", col.errorbars="gray50", 
-                        add=FALSE, xlab="Rank", ylab="Prediction Error",
-                         ... ) {
+plot.cvsvd <- function( x, errorbars = TRUE, add = FALSE,
+                        xlab = "Rank", ylab = "Prediction Error", 
+                        col = "blue", col.errorbars = "gray50", ... ) {
     press   <- x$press
     maxrank <- x$maxrank
     

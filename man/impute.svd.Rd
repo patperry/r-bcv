@@ -56,7 +56,7 @@
   p <- 10
   u <- rnorm( n )
   v <- rnorm( p )
-  xfull <- u %*% rbind( v ) + rnorm( n*p )
+  xfull <- u \%*\% rbind( v ) + rnorm( n*p )
   miss  <- sample( seq_len( n*p ), n )
   x       <- xfull
   x[miss] <- NA
