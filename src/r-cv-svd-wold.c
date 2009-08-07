@@ -46,7 +46,7 @@ R_cv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol,
     for (i = 0; i < k; i++)
     {
         R_CheckUserInterrupt ();
-        err = bcv_svd_wold_get_rss (wold, i, tol, maxiter, rss, maxrank);
+        err = bcv_svd_wold_get_press (wold, i, tol, maxiter, rss, maxrank);
             
         if (err)
             error ("the SVD algorithm did not converge for the (%d)"

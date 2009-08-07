@@ -53,7 +53,7 @@ R_cv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
         for (i = 0; i < K; i++)
         {
             R_CheckUserInterrupt ();
-            bcv_error = bcv_svd_gabriel_get_rss (bcv, i, j, rss, kmax);
+            bcv_error = bcv_svd_gabriel_get_press (bcv, i, j, rss, kmax);
             
             if (bcv_error)
                 error ("the SVD algorithm did not converge for the (%d,%d)"

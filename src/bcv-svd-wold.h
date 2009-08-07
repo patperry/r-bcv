@@ -88,25 +88,48 @@ void
 bcv_svd_wold_free (bcv_svd_wold_t *bcv);
 
 /**
- * bcv_svd_wold_get_rss:
+ * bcv_svd_wold_get_press:
  * @bcv: an initialized Wold CV workspace
  * @i: the index of a hold-out set
  * @tol: the tolerance for determining when an SVD imputation has converged
  * @max_iter: the maximum number of imputation steps to take
- * @rss: an array of length @max_rank+1
+ * @press: an array of length @max_rank+1
  * @max_rank: the rank to cross-validate up to
  *
  * Perform Wold-style cross-validation of the @i-th hold-out set.  Store
- * the prediction errors on the test set for ranks 0, 1, ..., @max_rank in
- * @rss[0], @rss[1], ..., @rss[@max_rank].
+ * the prediction error sum of squares (PRESS) between the test set and its
+ * estimate for ranks 0, 1, ..., @max_rank in @press[0], @press[1], ..., 
+ * @press[@max_rank].
  *
  * Return 0 on success or nonzero on failure to compute an SVD in one of
  * the imputation steps.
  */
 bcv_error_t
-bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
-                      double tol, bcv_index_t max_iter,
-                      double *rss, bcv_index_t max_rank);
+bcv_svd_wold_get_press (const bcv_svd_wold_t *bcv, bcv_index_t i,
+                        double tol, bcv_index_t max_iter,
+                        double *press, bcv_index_t max_rank);
+
+/**
+ * bcv_svd_wold_get_msep:
+ * @bcv: an initialized Wold CV workspace
+ * @i: the index of a hold-out set
+ * @tol: the tolerance for determining when an SVD imputation has converged
+ * @max_iter: the maximum number of imputation steps to take
+ * @msep: an array of length @max_rank+1
+ * @max_rank: the rank to cross-validate up to
+ *
+ * Perform Wold-style cross-validation of the @i-th hold-out set.  Store
+ * the mean square error of prediction (MSEP) between the test set and its
+ * estimate for ranks 0, 1, ..., @max_rank in @msep[0], @msep[1], ..., 
+ * @msep[@max_rank].
+ *
+ * Return 0 on success or nonzero on failure to compute an SVD in one of
+ * the imputation steps.
+ */
+bcv_error_t
+bcv_svd_wold_get_msep (const bcv_svd_wold_t *bcv, bcv_index_t i,
+                       double tol, bcv_index_t max_iter,
+                       double *msep, bcv_index_t max_rank);
 
 /**
  * bcv_svd_wold_get_max_rank:

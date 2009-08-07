@@ -68,13 +68,25 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
                    const bcv_matrix_t *x);
 
 /**
- * bcv_svd_wrep_get_rss:
+ * bcv_svd_wrep_get_press:
  * @bcv: an initialized wold-style replicate workspace
  *
- * Return the current RSS between the held-in set and its current estimate.
+ * Return the current prediction error sum of squares (PRESS) between the
+ * held-out set and its current estimate.
  */
 double 
-bcv_svd_wrep_get_rss (const bcv_svd_wrep_t *bcv);
+bcv_svd_wrep_get_press (const bcv_svd_wrep_t *bcv);
+
+/**
+ * bcv_svd_wrep_get_msep:
+ * @bcv: an initialized wold-style replicate workspace
+ *
+ * Return the currentmean square error of prediction (MSEP) between the
+ * held-out set and its current estimate.
+ */
+double 
+bcv_svd_wrep_get_msep (const bcv_svd_wrep_t *bcv);
+
 
 /**
  * bcv_svd_wrep_get_max_rank:
@@ -84,22 +96,32 @@ bcv_svd_wrep_get_rss (const bcv_svd_wrep_t *bcv);
  * the dimensions of the matrix that @bcv was initialized with.
  */
 bcv_index_t
-bcv_svd_wrep_get_max_rank (bcv_svd_wrep_t *bcv);
+bcv_svd_wrep_get_max_rank (const bcv_svd_wrep_t *bcv);
+
+/**
+ * bcv_svd_wrep_get_holdout_size:
+ * @bcv: a Wold-style replicate workspace
+ *
+ * Return the number of elements in the holdout set.
+ */
+bcv_index_t
+bcv_svd_wrep_get_holdout_size (const bcv_svd_wrep_t *bcv);
 
 /**
  * bcv_svd_wrep_impute_step:
  * @bcv: an initialized wold-style replicate workspace
  * @k: the rank of the SVD approximation
- * @train_rss: (out) the rss between the training set and the estimate
+ * @rss: (out) the RSS between the training set and the estimate
  *
  * Perform one step of the rank @k SVD imputation algorithm, using the 
- * current estimate in @bcv for initial values.  Return the training
- * set RSS after the step in @train_rss.  Return 0 on success and non-zero
- * on failure to compute the SVD of the current estimate of @x.
+ * current estimate in @bcv for initial values.  Return the residual sum of
+ * squares (RSS) between the training set and the current SVD estimate
+ * in $*rss.  Return 0 on success and non-zero on failure to compute the 
+ * SVD of the current estimate of @x.
  */
 bcv_error_t 
 bcv_svd_wrep_impute_step (bcv_svd_wrep_t *bcv, bcv_index_t k, 
-                          double *train_rss);
+                          double *rss);
 
 
 #endif /* _BCV_SVD_WOLD_REP_H */

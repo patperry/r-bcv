@@ -218,25 +218,56 @@ bcv_svd_grep_get_resid (const bcv_svd_grep_t *bcv, bcv_matrix_t *resid)
 
 
 bcv_index_t 
-bcv_svd_grep_get_max_rank (bcv_svd_grep_t *bcv)
+bcv_svd_grep_get_max_rank (const bcv_svd_grep_t *bcv)
 {
     assert (bcv);
     return BCV_MIN (bcv->x11->m, bcv->x11->n);
 }
 
 
+void
+bcv_svd_grep_get_holdout_sizes (const bcv_svd_grep_t *bcv, bcv_index_t *m2,
+                                bcv_index_t *n2)
+{
+    assert (bcv);
+    _bcv_assert_valid_matrix (bcv->x22);
+    assert (m2);
+    assert (n2);
+    
+    *m2 = bcv->x22->m;
+    *n2 = bcv->x22->n;
+}
+
+
 double 
-bcv_svd_grep_get_rss (const bcv_svd_grep_t *bcv)
+bcv_svd_grep_get_press (const bcv_svd_grep_t *bcv)
 {
     double frob;
-    double mse;
+    double press;
     
     assert (bcv);
     
-    frob = _bcv_matrix_norm_frob (bcv->x22);
-    mse  = (frob * frob);
+    frob  = _bcv_matrix_norm_frob (bcv->x22);
+    press = (frob * frob);
     
-    return mse;
+    return press;
+}
+
+
+double
+bcv_svd_grep_get_msep (const bcv_svd_grep_t *bcv)
+{
+    bcv_index_t m2, n2, holdout_size;
+    double press, msep;
+    
+    m2 = bcv->x22->m;
+    n2 = bcv->x22->n;
+    holdout_size = m2 * n2;
+    
+    press = bcv_svd_grep_get_press (bcv);
+    msep  = holdout_size == 0 ? 0.0 : press / holdout_size;
+    
+    return msep;
 }
 
 

@@ -119,11 +119,11 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
 
 
 double 
-bcv_svd_wrep_get_rss (const bcv_svd_wrep_t *bcv)
+bcv_svd_wrep_get_press (const bcv_svd_wrep_t *bcv)
 {
     bcv_index_t i, j, idx, ldx, ldxhat, m, n, num_indices, *indices;
     double *x, *xhat;
-    double x_ij, xhat_ij, d_ij, abs_d_ij, rss = 1.0, scale = 0.0;
+    double x_ij, xhat_ij, d_ij, abs_d_ij, press = 1.0, scale = 0.0;
 
     assert (bcv);
     _bcv_assert_valid_matrix (bcv->x);
@@ -172,23 +172,39 @@ bcv_svd_wrep_get_rss (const bcv_svd_wrep_t *bcv)
             if (scale < abs_d_ij)
             {
                 double ratio = scale / abs_d_ij;
-                rss   = 1.0 + rss * (ratio * ratio);
+                press = 1.0 + press * (ratio * ratio);
                 scale = abs_d_ij;
             }
             else
             {
                 double ratio_inv = abs_d_ij / scale;
-                rss   = rss + ratio_inv * ratio_inv;
+                press = press + ratio_inv * ratio_inv;
             }
         }
     }
     
-    return rss * (scale * scale);
+    return press * (scale * scale);
+}
+
+
+double 
+bcv_svd_wrep_get_msep (const bcv_svd_wrep_t *bcv)
+{
+    double press, msep;
+    bcv_index_t holdout_size;
+    
+    assert (bcv);
+    
+    press        = bcv_svd_wrep_get_press (bcv);
+    holdout_size = bcv->holdout.num_indices;
+    msep         = holdout_size == 0 ? 0.0 : press / holdout_size;
+    
+    return msep;
 }
 
 
 bcv_index_t
-bcv_svd_wrep_get_max_rank (bcv_svd_wrep_t *bcv)
+bcv_svd_wrep_get_max_rank (const bcv_svd_wrep_t *bcv)
 {
     bcv_index_t m, n, result;
     
@@ -203,19 +219,32 @@ bcv_svd_wrep_get_max_rank (bcv_svd_wrep_t *bcv)
 }
 
 
+bcv_index_t
+bcv_svd_wrep_get_holdout_size (const bcv_svd_wrep_t *bcv)
+{
+    bcv_index_t size;
+    
+    assert (bcv);
+    
+    size = bcv->holdout.num_indices;
+    
+    return size;
+}
+
+
 bcv_error_t 
 bcv_svd_wrep_impute_step (bcv_svd_wrep_t *bcv, bcv_index_t k, 
-                          double *train_rss)
+                          double *rss)
 {
     bcv_error_t err = 0;
     
     assert (bcv);
-    assert (train_rss);
+    assert (rss);
     
     err = bcv_svd_impute_step (bcv->impute, bcv->xhat, bcv->x,
                                bcv->holdout.indices, bcv->holdout.num_indices,
                                k);
-    *train_rss = bcv_svd_impute_get_rss (bcv->impute);
+    *rss = bcv_svd_impute_get_rss (bcv->impute);
     
     return err;
 }

@@ -99,25 +99,46 @@ void
 bcv_svd_gabriel_free (bcv_svd_gabriel_t *bcv);
 
 /**
- * bcv_svd_gabriel_get_rss:
+ * bcv_svd_gabriel_get_press:
  * @bcv: an initialized BCV workspace
  * @i: the index of the hold-out row set
  * @j: the index of the hold-out column set
- * @rss: an array to store the RSS from predicting the given hold-out set
- * @max_rank: the maximum rank from which to get the RSS
+ * @press: an array to store the PRESS from predicting the given hold-out set
+ * @max_rank: the maximum rank from which to get the PRESS
  *
- * Get the residual sum of squares (RSS) from predicting the (@i,@j) hold-out
- * block with ranks 0, 1, ..., @max_rank SVD terms from the held-in set
- * and store the results in @rss[0], @rss[1], @rss[@max_rank].  Return
- * zero on success and a positive number on failing to compute the SVD of
- * the held-in set.
+ * Get the prediction error sum of squares (PRESS) from predicting the 
+ * (@i,@j) hold-out block with ranks 0, 1, ..., @max_rank SVD terms from the
+ * held-in set and store the results in @press[0], @press[1], 
+ * @press[@max_rank].  Return zero on success and a positive number on 
+ * failing to compute the SVD of the held-in set.
  *
  * The @max_rank parameter must be less than or equal to the minimum dimension
  * of the held-in set.  See also bcv_svd_gabriel_get_max_rank().
  */
 bcv_error_t
-bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
-                         bcv_index_t j, double *rss, bcv_index_t max_rank);
+bcv_svd_gabriel_get_press (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
+                           bcv_index_t j, double *press, bcv_index_t max_rank);
+
+/**
+ * bcv_svd_gabriel_get_msep:
+ * @bcv: an initialized BCV workspace
+ * @i: the index of the hold-out row set
+ * @j: the index of the hold-out column set
+ * @msep: an array to store the MSEP from predicting the given hold-out set
+ * @max_rank: the maximum rank from which to get the MSEP
+ *
+ * Get the mean square error of prediction (MSEP) from predicting the 
+ * (@i,@j) hold-out block with ranks 0, 1, ..., @max_rank SVD terms from the
+ * held-in set and store the results in @msep[0], @msep[1], 
+ * @msep[@max_rank].  Return zero on success and a positive number on 
+ * failing to compute the SVD of the held-in set.
+ *
+ * The @max_rank parameter must be less than or equal to the minimum dimension
+ * of the held-in set.  See also bcv_svd_gabriel_get_max_rank().
+ */
+bcv_error_t
+bcv_svd_gabriel_get_msep (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
+                          bcv_index_t j, double *msep, bcv_index_t max_rank);
 
 /**
  * bcv_svd_gabriel_get_max_rank:

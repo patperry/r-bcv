@@ -105,9 +105,9 @@ bcv_svd_wold_free (bcv_svd_wold_t *bcv)
 
 
 bcv_error_t
-bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
-                      double tol, bcv_index_t max_iter,
-                      double *rss, bcv_index_t max_rank)
+bcv_svd_wold_get_press (const bcv_svd_wold_t *bcv, bcv_index_t i,
+                        double tol, bcv_index_t max_iter,
+                        double *press, bcv_index_t max_rank)
 {
     bcv_error_t err = 0;
     bcv_index_t rank;
@@ -137,10 +137,33 @@ bcv_svd_wold_get_rss (const bcv_svd_wold_t *bcv, bcv_index_t i,
         if (err)
             break;
             
-        rss[rank] = bcv_svd_wrep_get_rss (bcv->rep);
+        press[rank] = bcv_svd_wrep_get_press (bcv->rep);
     }
     
     return err;
+}
+
+
+bcv_error_t
+bcv_svd_wold_get_msep (const bcv_svd_wold_t *bcv, bcv_index_t i,
+                       double tol, bcv_index_t max_iter,
+                       double *msep, bcv_index_t max_rank)
+{
+    bcv_error_t error;
+    bcv_index_t rank, holdout_size;
+    
+    error = bcv_svd_wold_get_press (bcv, i, tol, max_iter, msep, max_rank);
+    holdout_size = bcv_svd_wrep_get_holdout_size (bcv->rep);
+    
+    if (holdout_size > 0)
+    {
+        for (rank = 0; rank < max_rank; rank++, msep++)
+        {
+            *msep = *msep / holdout_size;
+        }
+    }
+    
+    return error;    
 }
 
 

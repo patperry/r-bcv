@@ -120,13 +120,22 @@ void
 bcv_svd_grep_get_resid (const bcv_svd_grep_t *bcv, bcv_matrix_t *resid);
 
 /**
- * bcv_svd_get_rss:
+ * bcv_svd_get_press:
  * @bcv: the BCV workspace
  * 
- * Get the sum of squares of the elements in the residual matrix.
+ * Get the prediction error sum of squares of from the residual matrix.
  */
 double 
-bcv_svd_grep_get_rss (const bcv_svd_grep_t *bcv);
+bcv_svd_grep_get_press (const bcv_svd_grep_t *bcv);
+
+/**
+ * bcv_svd_grep_get_msep:
+ * @bcv: the BCV workspace
+ *
+ * Get the mean square error of prediction from the residual matrix.
+ */
+double
+bcv_svd_grep_get_msep (const bcv_svd_grep_t *bcv);
 
 /**
  * bcv_svd_grep_get_max_rank:
@@ -136,7 +145,19 @@ bcv_svd_grep_get_rss (const bcv_svd_grep_t *bcv);
  * of the held-in set.
  */
 bcv_index_t
-bcv_svd_grep_get_max_rank (bcv_svd_grep_t *bcv);
+bcv_svd_grep_get_max_rank (const bcv_svd_grep_t *bcv);
+
+/**
+ * bcv_svd_grep_get_holdout_sizes:
+ * @bcv: the BCV workspace
+ * @m2: (output) the number of rows in the holdout set
+ * @n2: (output) the number of columns in the holdout set
+ *
+ * Get the dimensions of the holdout matrix.
+ */
+void
+bcv_svd_grep_get_holdout_sizes (const bcv_svd_grep_t *bcv, bcv_index_t *m2,
+                                bcv_index_t *n2);
 
 /**
  * bcv_svd_grep_update_resid

@@ -108,15 +108,15 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
 
 
 bcv_error_t
-bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
-                         bcv_index_t j, double *rss, bcv_index_t max_rank)
+bcv_svd_gabriel_get_press (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
+                           bcv_index_t j, double *press, bcv_index_t max_rank)
 {
     bcv_error_t error = 0;
     bcv_gabriel_holdin_t holdin;
     bcv_index_t rank = 0;
     
     assert (bcv);
-    assert (rss);
+    assert (press);
     
     holdin.m = bcv_partition_get_perm (bcv->row_part, i, bcv->row_perm);
     holdin.n = bcv_partition_get_perm (bcv->col_part, j, bcv->col_perm);
@@ -124,7 +124,7 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     error  = bcv_svd_grep_init_with_perm (bcv->rep, holdin, bcv->x,
                                           bcv->row_perm, bcv->col_perm);
 
-    *rss++ = bcv_svd_grep_get_rss (bcv->rep);
+    *press++ = bcv_svd_grep_get_press (bcv->rep);
     
     if (!error)
     {
@@ -134,12 +134,36 @@ bcv_svd_gabriel_get_rss (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
         for (rank = 0; rank < max_rank; rank++)
         {
             bcv_svd_grep_update_resid (bcv->rep, 1.0, rank);
-            *rss++ = bcv_svd_grep_get_rss (bcv->rep);            
+            *press++ = bcv_svd_grep_get_press (bcv->rep);            
         }
     }
     
     return error;
 }
+
+
+bcv_error_t
+bcv_svd_gabriel_get_msep (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
+                          bcv_index_t j, double *msep, bcv_index_t max_rank)
+{
+    bcv_error_t error;
+    bcv_index_t m2, n2, size2, rank;
+    
+    error = bcv_svd_gabriel_get_press (bcv, i, j, msep, max_rank);
+    bcv_svd_grep_get_holdout_sizes (bcv->rep, &m2, &n2);
+    size2 = m2 * n2;
+    
+    if (size2 > 0)
+    {
+        for (rank = 0; rank < max_rank; rank++, msep++)
+        {
+            *msep = *msep / size2;
+        }
+    }
+    
+    return error;
+}
+
 
 bcv_index_t
 bcv_svd_gabriel_get_max_rank (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
