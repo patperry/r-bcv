@@ -16,8 +16,8 @@ R_cv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
 {
     bcv_index_t M, N, K, L, i, j, kmax;
     bcv_error_t bcv_error;
-    SEXP rss_R, dim;
-    double *rss;
+    SEXP msep_R, dim;
+    double *msep;
     
     if (!isMatrix (xx) || !isNumeric (xx))
         error ("x should be a matrix");
@@ -31,8 +31,8 @@ R_cv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
     if (kmax < 0)
         error ("max_rank should be non-negative");
 
-    PROTECT (rss_R = allocVector (REALSXP, (kmax + 1) * K * L));
-    rss = NUMERIC_POINTER (rss_R);
+    PROTECT (msep_R = allocVector (REALSXP, (kmax + 1) * K * L));
+    msep = NUMERIC_POINTER (msep_R);
 
     bcv_matrix_t x           = { M, N, NUMERIC_POINTER (xx), BCV_MAX (M,1) };
     bcv_partition_t row_part = { M, K, INTEGER_POINTER (s_r) };
@@ -53,21 +53,21 @@ R_cv_svd_gabriel (SEXP xx, SEXP KK, SEXP LL, SEXP max_rank, SEXP s_r, SEXP s_c)
         for (i = 0; i < K; i++)
         {
             R_CheckUserInterrupt ();
-            bcv_error = bcv_svd_gabriel_get_press (bcv, i, j, rss, kmax);
+            bcv_error = bcv_svd_gabriel_get_msep (bcv, i, j, msep, kmax);
             
             if (bcv_error)
                 error ("the SVD algorithm did not converge for the (%d,%d)"
                        " holdin", i, j);
             
-            rss += kmax + 1;
+            msep += kmax + 1;
         }
     }
 
     PROTECT (dim = allocVector (INTSXP, 2));
-    INTEGER (dim) [0] = (kmax + 1);
+    INTEGER (dim) [0] = kmax + 1;
     INTEGER (dim) [1] = K * L;
-    setAttrib (rss_R, R_DimSymbol, dim);
+    setAttrib (msep_R, R_DimSymbol, dim);
     
     UNPROTECT (2);
-    return rss_R;
+    return msep_R;
 }

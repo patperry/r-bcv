@@ -16,8 +16,8 @@ R_cv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol,
     bcv_error_t err = 0;
     bcv_index_t m, n, i, k, maxiter, maxrank;
     bcv_svd_wold_t *wold = NULL;
-    double tol, *rss;
-    SEXP rssrss, dimdim;
+    double tol, *msep;
+    SEXP msepmsep, dimdim;
 
     m       = INTEGER (getAttrib (xx, R_DimSymbol))[0];
     n       = INTEGER (getAttrib (xx, R_DimSymbol))[1];
@@ -26,12 +26,12 @@ R_cv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol,
     tol     = asReal (toltol);
     maxiter = asInteger (maxitermaxiter);
 
-    PROTECT (rssrss = allocVector (REALSXP, (maxrank + 1) * k));
-    PROTECT (dimdim = allocVector (INTSXP, 2));
+    PROTECT (msepmsep = allocVector (REALSXP, (maxrank + 1) * k));
+    PROTECT (dimdim   = allocVector (INTSXP, 2));
     INTEGER (dimdim) [0] = maxrank + 1;
     INTEGER (dimdim) [1] = k;
-    setAttrib (rssrss, R_DimSymbol, dimdim);
-    rss = NUMERIC_POINTER (rssrss);
+    setAttrib (msepmsep, R_DimSymbol, dimdim);
+    msep = NUMERIC_POINTER (msepmsep);
 
     bcv_matrix_t x       = { m, n, NUMERIC_POINTER (xx), BCV_MAX (m,1) };
     bcv_partition_t part = { m*n, k, INTEGER_POINTER (setssets) };
@@ -46,17 +46,17 @@ R_cv_svd_wold (SEXP xx, SEXP kk, SEXP maxrankmaxrank, SEXP toltol,
     for (i = 0; i < k; i++)
     {
         R_CheckUserInterrupt ();
-        err = bcv_svd_wold_get_press (wold, i, tol, maxiter, rss, maxrank);
+        err = bcv_svd_wold_get_msep (wold, i, tol, maxiter, msep, maxrank);
             
         if (err)
             error ("the SVD algorithm did not converge for the (%d)"
                    " holdout", i);
         
-        rss += maxrank + 1;
+        msep += maxrank + 1;
     }
     
     bcv_svd_wold_free (wold);
     
     UNPROTECT (2);
-    return rssrss;
+    return msepmsep;
 }

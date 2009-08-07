@@ -1,41 +1,41 @@
 
 plot.cvsvd <- function( x, errorbars = TRUE, add = FALSE,
-                        xlab = "Rank", ylab = "Prediction Error", 
+                        xlab = "Rank", ylab = "Mean Sq. Prediction Error", 
                         col = "blue", col.errorbars = "gray50", ... ) {
-    press   <- x$press
+    msep   <- x$msep
     maxrank <- x$maxrank
     
-    K           <- nrow( press )
-    rank        <- seq( from=0, to=maxrank, by=1 )
-    press.mean  <- apply( press, 2, mean )
-    press.se    <- apply( press, 2, sd ) / sqrt( K )
+    K          <- nrow( msep )
+    rank       <- seq( from=0, to=maxrank, by=1 )
+    msep.mean  <- apply( msep, 2, mean )
+    msep.se    <- apply( msep, 2, sd ) / sqrt( K )
     
     if( !add ) {
         if( errorbars ) {
-            plot( c(rank-0.2,rank+0.2), press.mean+c(-press.se, press.se), 
+            plot( c(rank-0.2,rank+0.2), msep.mean+c(-msep.se, msep.se), 
                   t='n', xlab=xlab, ylab=ylab, ... )
         } else {
-            plot( rank, press.mean, t='n', xlab=xlab, ylab=ylab, ... )
+            plot( rank, msep.mean, t='n', xlab=xlab, ylab=ylab, ... )
         }
     }
 
-    lines( rank, press.mean, col=col )
+    lines( rank, msep.mean, col=col )
     
     if( errorbars ) {
-        segments( rank-0.2, press.mean-press.se, 
-                  rank+0.2, press.mean-press.se,
+        segments( rank-0.2, msep.mean-msep.se, 
+                  rank+0.2, msep.mean-msep.se,
                   col=col.errorbars )
 
-        segments( rank, press.mean-press.se, 
-                  rank, press.mean+press.se,
+        segments( rank, msep.mean-msep.se, 
+                  rank, msep.mean+msep.se,
                   col=col.errorbars )
 
-        segments( rank-0.2, press.mean+press.se, 
-                  rank+0.2, press.mean+press.se,
+        segments( rank-0.2, msep.mean+msep.se, 
+                  rank+0.2, msep.mean+msep.se,
                   col=col.errorbars )
     }
 
-    points( rank, press.mean, col=col, pch=16, cex=0.6 )
+    points( rank, msep.mean, col=col, pch=16, cex=0.6 )
     
-    invisible( list( k=rank, press=press.mean ) )
+    invisible( list( k=rank, msep=msep.mean ) )
 }

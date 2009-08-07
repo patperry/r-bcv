@@ -157,7 +157,7 @@ bcv_svd_wold_get_msep (const bcv_svd_wold_t *bcv, bcv_index_t i,
     
     if (holdout_size > 0)
     {
-        for (rank = 0; rank < max_rank; rank++, msep++)
+        for (rank = 0; rank <= max_rank; rank++, msep++)
         {
             *msep = *msep / holdout_size;
         }

@@ -22,18 +22,18 @@ cv.svd.wold.check <- function( cv.svd ) {
     
         sets  <- choose.sets( n*p, k )
         
-        press <- cv.svd( x, k, maxrank, tol, maxiter, sets )
-        colnames( press ) <- 0:maxrank
+        msep <- cv.svd( x, k, maxrank, tol, maxiter, sets )
+        colnames( msep ) <- 0:maxrank
         
         res   <- list( call=match.call(), k=k, maxrank=maxrank, 
-                       press=press, sets=sets )
+                       msep=msep, sets=sets )
         class( res ) <- c("cvsvd_wold", "cvsvd")
         res
     }
 }
 
 cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
-    cv <- matrix( NA, k, maxrank+1 )
+    msep <- matrix( NA, k, maxrank+1 )
     
     for( j in seq_len( k ) ) {
         train  <- sets != j
@@ -46,20 +46,20 @@ cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
             xhat <- suppressWarnings(
                         impute.svd( xtrain, rank, tol, maxiter )$x )
                         
-            err  <- sum( ( xhat[ test ] - x[ test ] )^2 )
-            cv[ j, rank+1 ] <- err
+            err  <- mean( ( xhat[ test ] - x[ test ] )^2 )
+            msep[ j, rank+1 ] <- err
         }
     }
     
-    cv
+    msep
 }
 cv.svd.wold.R <- cv.svd.wold.check( cv.svd.wold.R.unchecked )
 
 cv.svd.wold.C.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
-    presst <- .Call( "R_cv_svd_wold", x, k, maxrank, tol, maxiter, 
+    msept <- .Call( "R_cv_svd_wold", x, k, maxrank, tol, maxiter, 
                      as.integer( sets-1 ) )    
-    press  <- t( presst )
-    press
+    msep  <- t( msept )
+    msep
 }
 cv.svd.wold.C <- cv.svd.wold.check( cv.svd.wold.C.unchecked )
 

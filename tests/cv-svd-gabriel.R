@@ -22,20 +22,20 @@ check <- function( cv, x )
             x22 <- get.x22( cv, x, i, j )
             
             row <- i + ( j-1 )*cv$krow
-            expected[ row, 1 ] <- sum( x22^2 )
+            expected[ row, 1 ] <- mean( x22^2 )
             for( k in seq_len( cv$maxrank ) )
             {
                 x22.hat <- (     ( x21 %*% v1[,1:k,drop=FALSE] )
                              %*% diag( 1.0 / d[1:k], k, k )
                              %*% ( t( u1[,1:k,drop=FALSE] ) %*% x12 ) )
-                expected[ row, k + 1 ] <- sum( ( x22 - x22.hat )^2 )                
+                expected[ row, k + 1 ] <- mean( ( x22 - x22.hat )^2 )                
             }
         }
     }
     
-    actual <- cv$press
+    actual <- cv$msep
     
-    if( !all( abs( ( expected - actual )/expected < 1e-8 ) ) )
+    if( !all( abs( expected - actual )/expected < 1e-8 ) )
     {
         cat( "Expected:\n")
         print( expected )

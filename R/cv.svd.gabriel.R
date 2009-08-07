@@ -35,13 +35,13 @@ cv.svd.gabriel <- function(x, krow=2, kcol=2,
     if (!missing(maxrank) && maxrank != maxrank.o)
         warning("maxrank has been set to ", maxrank)
     
-    presst <- .Call( "R_cv_svd_gabriel", x, krow, kcol, maxrank, 
+    msept <- .Call( "R_cv_svd_gabriel", x, krow, kcol, maxrank, 
                      as.integer( s.r-1 ), as.integer( s.c-1 ) )
-    press  <- t(presst)
-    colnames( press ) <- 0:maxrank
+    msep  <- t(msept)
+    colnames( msep ) <- 0:maxrank
     
     res    <- list( call=match.call(), krow=krow, kcol=kcol, maxrank=maxrank, 
-                    press=press, rowsets=s.r, colsets=s.c)
+                    msep=msep, rowsets=s.r, colsets=s.c)
     class( res ) <- c("cvsvd_gabriel", "cvsvd")
     res
 }

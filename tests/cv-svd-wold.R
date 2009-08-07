@@ -12,9 +12,9 @@ check <- function( actual, test ) {
                                    test$maxrank, test$tol, 
                                    test$maxiter, actual$sets ) )
     
-    if (!identical( dim( actual$press ), dim( expected ) ) ) {
+    if (!identical( dim( actual$msep ), dim( expected ) ) ) {
         failed <- TRUE
-    } else if( !all( abs( expected - actual$press )
+    } else if( !all( abs( expected - actual$msep )
                      < 
                      1e-12 + 1e-8 * abs( expected ) ) ) {
 

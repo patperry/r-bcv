@@ -155,7 +155,7 @@ bcv_svd_gabriel_get_msep (const bcv_svd_gabriel_t *bcv, bcv_index_t i,
     
     if (size2 > 0)
     {
-        for (rank = 0; rank < max_rank; rank++, msep++)
+        for (rank = 0; rank <= max_rank; rank++, msep++)
         {
             *msep = *msep / size2;
         }

@@ -2,31 +2,31 @@
 print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
     cat( "\nCall:\n", deparse( x$call ), "\n\n", sep = "" )
     
-    press   <- x$press
+    msep   <- x$msep
     maxrank <- x$maxrank
     
-    K           <- nrow( press )
+    K           <- nrow( msep )
     rank        <- seq( from=0, to=maxrank, by=1 )
-    press.mean  <- apply( press, 2, mean )
-    press.se    <- apply( press, 2, sd ) / sqrt( K )
-    min.rank    <- which.min( press.mean ) - 1
-    min.rank.se <- min( which( press.mean 
-                               <= press.mean[ min.rank+1 ] 
-                                  + press.se[ min.rank+1 ] ) ) - 1
+    msep.mean   <- apply( msep, 2, mean )
+    msep.se     <- apply( msep, 2, sd ) / sqrt( K )
+    min.rank    <- which.min( msep.mean ) - 1
+    min.rank.se <- min( which( msep.mean 
+                               <= msep.mean[ min.rank+1 ] 
+                                  + msep.se[ min.rank+1 ] ) ) - 1
     
     rank.fmt   <- format( rank )
     rank.width <- max( nchar( rank.fmt[ 1 ] ), nchar( "Rank" ) + 1 )
     
-    mean.fmt   <- format( press.mean, digits=digits )
-    mean.width <- max( nchar( mean.fmt[ 1 ] ), nchar( "PRESS" ) + 1 )
+    mean.fmt   <- format( msep.mean, digits=digits )
+    mean.width <- max( nchar( mean.fmt[ 1 ] ), nchar( "MSEP" ) + 1 )
     
-    se.fmt     <- format( press.se, digits=digits )
+    se.fmt     <- format( msep.se, digits=digits )
     se.width   <- max( nchar( se.fmt[ 1 ] ), nchar( "SE" ) + 1 )
     
     fmt <- paste( " %", rank.width, "s", 
                   "  %", mean.width, "s",
                   "  %", se.width, "s", sep="" )
-    cat( sprintf( fmt, "Rank", "PRESS", "SE" ), "\n", sep="" )
+    cat( sprintf( fmt, "Rank", "MSEP", "SE" ), "\n", sep="" )
     cat( " " )
     cat( do.call( paste, 
          c( as.list( rep("-", 
@@ -36,8 +36,8 @@ print.cvsvd <- function( x, digits=max(3, getOption("digits") - 3), ... ) {
     
     for( i in seq_len( maxrank+1 ) ) {
         rank <- i - 1
-        mean <- press.mean[ i ]
-        se   <- press.se[ i ]
+        mean <- msep.mean[ i ]
+        se   <- msep.se[ i ]
         cat( sprintf( fmt, rank.fmt[ i ], mean.fmt[ i ], se.fmt[ i ] ) )
         if ( rank == min.rank && rank == min.rank.se ) {
             cat( " *+ " )

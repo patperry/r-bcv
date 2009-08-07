@@ -9,7 +9,7 @@
 }
 \usage{
   \method{plot}{cvsvd}(x, errorbars = TRUE, add = FALSE,
-       xlab = "Rank", ylab = "Prediction Error", 
+       xlab = "Rank", ylab = "Mean Sq. Prediction Error", 
        col = "blue", col.errorbars = "gray50", ...)
 }
 \arguments{

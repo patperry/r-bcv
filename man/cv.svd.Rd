@@ -48,11 +48,12 @@
 }
 \value{
   \item{call }{the function call}
-  \item{press }{the prediction error (sum of squares); this is a matrix whose 
-    columns contain the errors for ranks 0, 1, ..., \code{maxrank} across the 
-    different replicates.}
+  \item{msep }{the mean square error of prediction (MSEP); this is a matrix 
+    whose columns contain the mean square errors in the predictions of the
+    holdout sets for ranks 0, 1, ...,  \code{maxrank} across the  different 
+    replicates.}
   \item{maxrank }{the maximum rank for which prediction error is estimated; 
-    this is equal to \code{nrow(press)}.}
+    this is equal to \code{nrow(msep)}.}
   
   \item{krow }{the number of row folds (for Gabriel-style only).}
   \item{kcol }{the number of column folds (for Gabriel-style only).}
