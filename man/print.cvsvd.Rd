@@ -26,4 +26,5 @@
   \code{\link{cv.svd.gabriel}}, 
   \code{\link{cv.svd.wold}},
   \code{\link{plot.cvsvd}}
+  \code{\link{summary.cvsvd}}
 }

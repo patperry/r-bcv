@@ -36,6 +36,7 @@
   \code{\link{cv.svd.gabriel}}, 
   \code{\link{cv.svd.wold}},
   \code{\link{print.cvsvd}}
+  \code{\link{summary.cvsvd}}
 }
 \examples{
   # generate a rank-2 matrix plus noise

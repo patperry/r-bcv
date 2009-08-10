@@ -33,4 +33,5 @@
     \code{\link{cv.svd.wold}},
     \code{\link{plot.cvsvd}},
     \code{\link{print.cvsvd}}
+    \code{\link{summary.cvsvd}}
 }

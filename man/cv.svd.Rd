@@ -53,7 +53,7 @@
     holdout sets for ranks 0, 1, ...,  \code{maxrank} across the  different 
     replicates.}
   \item{maxrank }{the maximum rank for which prediction error is estimated; 
-    this is equal to \code{nrow(msep)}.}
+    this is equal to \code{nrow(msep)+1}.}
   
   \item{krow }{the number of row folds (for Gabriel-style only).}
   \item{kcol }{the number of column folds (for Gabriel-style only).}
@@ -100,6 +100,7 @@
     \code{\link{impute.svd}}, 
     \code{\link{plot.cvsvd}},
     \code{\link{print.cvsvd}}
+    \code{\link{summary.cvsvd}}
 }
 \examples{
   # generate a rank-2 matrix plus noise
