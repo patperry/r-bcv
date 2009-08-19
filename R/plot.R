@@ -1,7 +1,8 @@
 
 plot.cvsvd <- function( x, errorbars = TRUE, add = FALSE,
                         xlab = "Rank", ylab = "Mean Sq. Prediction Error", 
-                        col = "blue", col.errorbars = "gray50", ... ) {
+                        col = "blue", col.errorbars = "gray50", 
+                        ... ) {
     msep   <- x$msep
     maxrank <- x$maxrank
     
@@ -19,7 +20,7 @@ plot.cvsvd <- function( x, errorbars = TRUE, add = FALSE,
         }
     }
 
-    lines( rank, msep.mean, col=col )
+    lines( rank, msep.mean, col=col, ... )
     
     if( errorbars ) {
         segments( rank-0.2, msep.mean-msep.se, 
