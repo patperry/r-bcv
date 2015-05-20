@@ -56,7 +56,7 @@ void
 bcv_partition_init (bcv_partition_t *part, bcv_index_t n, bcv_index_t k, 
                     const bcv_index_t *sets)
 {
-    void *mem = part; mem += sizeof (bcv_partition_t);
+    char *mem = (char *)part; mem += sizeof (bcv_partition_t);
     
     assert (mem);
     assert (n >= 0);
@@ -65,7 +65,7 @@ bcv_partition_init (bcv_partition_t *part, bcv_index_t n, bcv_index_t k,
     
     part->n    = n;
     part->k    = k;
-    part->sets = mem;
+    part->sets = (void *)mem;
     memcpy (part->sets, sets, n * sizeof (bcv_index_t));
 }
 

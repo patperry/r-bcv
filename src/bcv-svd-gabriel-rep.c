@@ -134,23 +134,23 @@ bcv_svd_grep_init_storage (bcv_svd_grep_t *bcv, bcv_gabriel_holdin_t holdin,
     bcv_index_t mn = BCV_MIN (m,n);
     size_t matrix_align = _bcv_alignof (bcv_matrix_t);
     size_t double_align = _bcv_alignof (double);
-    void *mem;
+    char *mem;
     
     assert (bcv);
     _bcv_assert_valid_gabriel_holdin (&holdin, M, N);
     
-    mem            = bcv; mem += sizeof (bcv_svd_grep_t);
+    mem            = (char *)bcv; mem += sizeof (bcv_svd_grep_t);
     
     mem = BCV_ALIGN_PTR (mem, matrix_align);
-    bcv->x11       = mem; mem += sizeof (bcv_matrix_t);
-    bcv->x21       = mem; mem += sizeof (bcv_matrix_t);
-    bcv->x12       = mem; mem += sizeof (bcv_matrix_t);
-    bcv->x22       = mem; mem += sizeof (bcv_matrix_t);
+    bcv->x11       = (void *)mem; mem += sizeof (bcv_matrix_t);
+    bcv->x21       = (void *)mem; mem += sizeof (bcv_matrix_t);
+    bcv->x12       = (void *)mem; mem += sizeof (bcv_matrix_t);
+    bcv->x22       = (void *)mem; mem += sizeof (bcv_matrix_t);
     
     mem = BCV_ALIGN_PTR (mem, double_align);
-    bcv->x11->data = mem; mem += M * N * sizeof (double);
-    bcv->d         = mem; mem += mn * sizeof (double);
-    bcv->work      = mem;
+    bcv->x11->data = (void *)mem; mem += M * N * sizeof (double);
+    bcv->d         = (void *)mem; mem += mn * sizeof (double);
+    bcv->work      = (void *)mem;
     
     bcv->x11->m   = m;
     bcv->x11->n   = n;

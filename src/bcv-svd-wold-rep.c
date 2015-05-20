@@ -83,7 +83,7 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
                    const bcv_matrix_t *x)
 {
     bcv_index_t m, n;
-    void *mem;
+    char *mem;
     size_t matrix_align = _bcv_alignof (bcv_matrix_t);
     size_t impute_align = bcv_svd_impute_align ();
     size_t double_align = _bcv_alignof (double);
@@ -95,16 +95,16 @@ bcv_svd_wrep_init (bcv_svd_wrep_t *bcv, bcv_wold_holdout_t holdout,
     n = x->n;
     _bcv_assert_valid_wold_holdout (&holdout, m, n);
     
-    mem = bcv; mem += sizeof (bcv_svd_wrep_t);
+    mem = (char *)bcv; mem += sizeof (bcv_svd_wrep_t);
     
     mem = BCV_ALIGN_PTR (mem, matrix_align);
-    bcv->xhat = mem; mem += sizeof (bcv_matrix_t);
+    bcv->xhat = (void *)mem; mem += sizeof (bcv_matrix_t);
 
     mem = BCV_ALIGN_PTR (mem, double_align);
-    bcv->xhat->data = mem; mem += m * n * sizeof (double);
+    bcv->xhat->data = (void *)mem; mem += m * n * sizeof (double);
     
     mem = BCV_ALIGN_PTR (mem, impute_align);
-    bcv->impute = mem;
+    bcv->impute = (void *)mem;
     
     bcv->xhat->m   = m;
     bcv->xhat->n   = n;

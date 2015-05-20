@@ -87,7 +87,7 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
                       const bcv_partition_t *rows, 
                       const bcv_partition_t *cols)
 {
-    void *mem = bcv; mem += sizeof (bcv_svd_gabriel_t);
+    char *mem = (char *)bcv; mem += sizeof (bcv_svd_gabriel_t);
     size_t bcv_index_align = _bcv_alignof (bcv_index_t);
     size_t rep_align       = bcv_svd_grep_align ();
     
@@ -99,11 +99,11 @@ bcv_svd_gabriel_init (bcv_svd_gabriel_t *bcv, const bcv_matrix_t *x,
     bcv->col_part = cols;
     
     mem = BCV_ALIGN_PTR (mem, bcv_index_align);
-    bcv->row_perm = mem; mem += (x->m) * sizeof (bcv_index_t);
-    bcv->col_perm = mem; mem += (x->n) * sizeof (bcv_index_t);
+    bcv->row_perm = (void *)mem; mem += (x->m) * sizeof (bcv_index_t);
+    bcv->col_perm = (void *)mem; mem += (x->n) * sizeof (bcv_index_t);
     
     mem = BCV_ALIGN_PTR (mem, rep_align);
-    bcv->rep = mem;
+    bcv->rep = (void *)mem;
 }
 
 

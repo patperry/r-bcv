@@ -20,10 +20,11 @@
  * the result is divisible by @a.
  */
 #define BCV_ALIGN_PTR(p,a) \
-            (((void *) (p) + (size_t) (a) - 1) \
-             - \
-             ((uintptr_t) (((void *) (p) + (size_t) (a) - 1)) \
-              & \
-              ((size_t) (a)-1)))
+            ((void *) \
+             (((char *) (p) + (size_t) (a) - 1) \
+              - \
+              ((uintptr_t) (((char *) (p) + (size_t) (a) - 1)) \
+               & \
+               ((size_t) (a)-1))))
 
 #endif /* _BCV_ALIGN_PRIVATE_H */

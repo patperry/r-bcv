@@ -72,7 +72,7 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
     bcv_index_t m, n;
     size_t wrep_align  = bcv_svd_wrep_align ();
     size_t index_align = _bcv_alignof (bcv_index_t);
-    void *mem;
+    char *mem;
     
     assert (bcv);
     _bcv_assert_valid_matrix (x);
@@ -83,13 +83,13 @@ bcv_svd_wold_init (bcv_svd_wold_t *bcv, const bcv_matrix_t *x,
     
     assert (part->n == m*n);
     
-    mem = bcv; mem += sizeof (bcv_svd_wold_t);
+    mem = (char *)bcv; mem += sizeof (bcv_svd_wold_t);
     
     mem = BCV_ALIGN_PTR (mem, wrep_align);
-    bcv->rep = mem; mem += bcv_svd_wrep_size (m, n);
+    bcv->rep = (void *)mem; mem += bcv_svd_wrep_size (m, n);
     
     mem = BCV_ALIGN_PTR (mem, index_align);
-    bcv->holdout = mem;
+    bcv->holdout = (void *)mem;
     
     bcv->x    = x;
     bcv->part = part;

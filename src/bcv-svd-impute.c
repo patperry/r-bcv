@@ -171,7 +171,7 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
     size_t bcv_matrix_align = _bcv_alignof (bcv_matrix_t);
     size_t double_align     = _bcv_alignof (double);
     size_t index_align      = _bcv_alignof (bcv_index_t);
-    void *mem;
+    char *mem;
     
     assert (impute);
     _bcv_assert_valid_matrix (x);
@@ -182,20 +182,20 @@ bcv_svd_impute_init (bcv_svd_impute_t *impute,
     lwork  = bcv_svd_impute_svd_lwork (m, n);
     liwork = bcv_svd_impute_svd_liwork (m, n);
 
-    mem = impute; mem += sizeof (bcv_svd_impute_t);
+    mem = (char *)impute; mem += sizeof (bcv_svd_impute_t);
 
     mem = BCV_ALIGN_PTR (mem, bcv_matrix_align);
-    impute->ud = mem; mem += sizeof (bcv_matrix_t);
-    impute->vt = mem; mem += sizeof (bcv_matrix_t);
+    impute->ud = (void *)mem; mem += sizeof (bcv_matrix_t);
+    impute->vt = (void *)mem; mem += sizeof (bcv_matrix_t);
     
     mem = BCV_ALIGN_PTR (mem, double_align);
-    impute->ud->data = mem; mem += m  * mn * sizeof (double);
-    impute->vt->data = mem; mem += mn * n  * sizeof (double);
-    impute->d        = mem; mem += mn * sizeof (double);
-    impute->work     = mem; mem += lwork * sizeof (double);
+    impute->ud->data = (void *)mem; mem += m  * mn * sizeof (double);
+    impute->vt->data = (void *)mem; mem += mn * n  * sizeof (double);
+    impute->d        = (void *)mem; mem += mn * sizeof (double);
+    impute->work     = (void *)mem; mem += lwork * sizeof (double);
 
     mem = BCV_ALIGN_PTR (mem, index_align);
-    impute->iwork = mem; mem += liwork * sizeof (bcv_index_t);
+    impute->iwork = (void *)mem; mem += liwork * sizeof (bcv_index_t);
     
     impute->ud->m   = m;
     impute->ud->n   = mn;
