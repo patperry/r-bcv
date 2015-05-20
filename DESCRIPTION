@@ -12,5 +12,5 @@ Description:
     Bi-cross-validation, see Owen & Perry's 2009 AOAS article
     (at http://arxiv.org/abs/0908.2062) and Perry's 2009 PhD thesis
     (at http://arxiv.org/abs/0909.3052).
-License:     BSD
+License:     BSD_3_clause + file LICENSE
 Encoding:    UTF-8
