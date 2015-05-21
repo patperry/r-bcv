@@ -37,7 +37,7 @@ impute.colMeans <- function( x ) {
     
     if( min( dim( x ) ) > 0 ) {
         s  <- drop( matrix( 1, 1, nrow( x ) ) %*% x )
-        n  <- apply( !isna, 2, sum )
+        n  <- nrow( x ) - apply( isna, 2, sum )
         mu <- ifelse( n == 0, 0, s/n )
     } else {
         mu <- rep( 0, ncol( x ) )
