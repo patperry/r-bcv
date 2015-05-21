@@ -1,7 +1,7 @@
 
 #include <assert.h>
 #include <stdlib.h>
-#include <strings.h>
+#include <string.h>
 #include "bcv-vector-private.h"
 #include "bcv-matrix-private.h"
 
@@ -101,7 +101,7 @@ _bcv_matrix_set_identity (bcv_matrix_t *a)
     {
         if (lda == m)
         {
-            bzero (data, m * n * sizeof (double));
+            memset (data, 0, m * n * sizeof (double));
 
             mn = BCV_MIN (m, n);
             for (j = 0; j < mn; j++, data += lda + 1)
@@ -111,7 +111,7 @@ _bcv_matrix_set_identity (bcv_matrix_t *a)
         {
             for (j = 0; j < n; j++, data += lda)
             {
-                bzero (data, m * sizeof (double));
+                memset (data, 0, m * sizeof (double));
                 if (j < m) data[j] = 1.0;
             }
         }

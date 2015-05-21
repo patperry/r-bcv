@@ -3,7 +3,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include "bcv-align-private.h"
 #include "bcv-partition.h"
 
@@ -181,7 +180,7 @@ bcv_partition_get_sizes (const bcv_partition_t *part,
     assert (sizes      || k == 0);
 
     /* initialize sizes to 0 */
-    bzero (sizes, k * sizeof (bcv_index_t));
+    memset (sizes, 0, k * sizeof (bcv_index_t));
     
     for (sets = sets_begin; sets < sets_end; sets++)
     {
