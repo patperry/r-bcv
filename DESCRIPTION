@@ -2,7 +2,7 @@ Package:     bcv
 Version:     1.0.1
 Date:        2015-05-20
 Title:       Cross-Validation for the SVD (Bi-Cross-Validation)
-Author:      Patrick O. Perry
+Author:      Patrick O. Perry, Wei Fu
 Maintainer:  Patrick O. Perry <pperry@stern.nyu.edu>
 Description: 
     Methods for choosing the rank of an SVD approximation via cross
