@@ -1,6 +1,6 @@
 
 cv.svd.wold.check <- function( cv.svd ) {
-    function( x, k=5, maxrank=20, tol=1e-4, maxiter=20 ) {
+    function( x, k=5, maxrank=min(20, dim(x)), tol=1e-4, maxiter=20 ) {
         x <- as.matrix( x )
         n <- nrow( x )
         p <- ncol( x )
@@ -35,6 +35,7 @@ cv.svd.wold.check <- function( cv.svd ) {
 cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
     msep <- matrix( NA, k, maxrank+1 )
     
+    ok <- !is.na(x)
     for( j in seq_len( k ) ) {
         train  <- sets != j
         test   <- !train
@@ -46,7 +47,7 @@ cv.svd.wold.R.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
             xhat <- suppressWarnings(
                         impute.svd( xtrain, rank, tol, maxiter )$x )
                         
-            err  <- mean( ( xhat[ test ] - x[ test ] )^2 )
+            err  <- mean( ( xhat[ test & ok ] - x[ test & ok ] )^2 )
             msep[ j, rank+1 ] <- err
         }
     }
@@ -63,4 +64,5 @@ cv.svd.wold.C.unchecked <- function( x, k, maxrank, tol, maxiter, sets ) {
 }
 cv.svd.wold.C <- cv.svd.wold.check( cv.svd.wold.C.unchecked )
 
-cv.svd.wold <- cv.svd.wold.C
+#cv.svd.wold <- cv.svd.wold.C
+cv.svd.wold <- cv.svd.wold.R
